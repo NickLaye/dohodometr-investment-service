@@ -158,10 +158,10 @@ jobs:
             export FRONTEND_IMAGE=${{ needs.build-and-push.outputs.frontend-image }}
             
             # Backup database before deployment
-            docker-compose -f docker-compose.production.yml exec -T postgres pg_dump -U postgres dohodometr | gzip > "backup_$(date +%Y%m%d_%H%M%S).sql.gz" || echo "Database backup failed, continuing..."
+            docker compose -f docker-compose.production.yml exec -T postgres pg_dump -U postgres dohodometr | gzip > "backup_$(date +%Y%m%d_%H%M%S).sql.gz" || echo "Database backup failed, continuing..."
             
             # Deploy new version with zero-downtime
-            docker-compose -f docker-compose.production.yml up -d --no-deps backend frontend
+            docker compose -f docker-compose.production.yml up -d --no-deps backend frontend
             
             # Wait for health checks
             sleep 30

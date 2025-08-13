@@ -49,8 +49,8 @@ jobs:
 
       - name: Validate Docker Compose files
         run: |
-          docker-compose -f docker-compose.dev.yml config > /dev/null
-          docker-compose -f docker-compose.dohodometr.yml config > /dev/null
+          docker compose -f docker-compose.dev.yml config > /dev/null
+          docker compose -f docker-compose.dohodometr.yml config > /dev/null
           echo "✅ All Docker Compose files are valid"
 
       - name: Check security configurations
@@ -371,7 +371,7 @@ jobs:
       - name: Set up test environment
         run: |
           cp env.example .env
-          docker-compose -f docker-compose.dev.yml up -d postgres redis
+          docker compose -f docker-compose.dev.yml up -d postgres redis
           sleep 30
 
       - name: Install penetration testing tools

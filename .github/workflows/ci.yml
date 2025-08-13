@@ -230,7 +230,7 @@ jobs:
       - name: Start services
         run: |
           cp env.example .env
-          docker-compose -f docker-compose.dev.yml up -d postgres redis minio
+          docker compose -f docker-compose.dev.yml up -d postgres redis minio
           sleep 10
 
       - name: Run E2E tests
