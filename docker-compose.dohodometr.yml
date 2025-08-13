@@ -1,4 +1,4 @@
-version: '3.8'
+# Removed obsolete version field - using modern Docker Compose
 
 services:
   # Traefik Reverse Proxy с Let's Encrypt
@@ -120,7 +120,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-secure_password_change_me}@postgres:5432/dohodometr
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your_secret_key_change_me}
+      - SECRET_KEY=${SECRET_KEY:-INSECURE_DEFAULT_CHANGE_IMMEDIATELY}
       - ENVIRONMENT=production
       - CORS_ORIGINS=https://dohodometr.ru,https://www.dohodometr.ru
       - TRUSTED_HOSTS=dohodometr.ru,www.dohodometr.ru
@@ -227,7 +227,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-secure_password_change_me}@postgres:5432/dohodometr
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your_secret_key_change_me}
+      - SECRET_KEY=${SECRET_KEY:-INSECURE_DEFAULT_CHANGE_IMMEDIATELY}
       - ENVIRONMENT=production
     volumes:
       - ./uploads:/app/uploads
@@ -249,7 +249,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-secure_password_change_me}@postgres:5432/dohodometr
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your_secret_key_change_me}
+      - SECRET_KEY=${SECRET_KEY:-INSECURE_DEFAULT_CHANGE_IMMEDIATELY}
       - ENVIRONMENT=production
     volumes:
       - ./logs/celery-beat:/app/logs

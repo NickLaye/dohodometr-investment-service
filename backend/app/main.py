@@ -24,6 +24,7 @@ from app.core.config import settings
 from app.core.database_sync import engine, get_db
 from app.core.security import get_current_user
 from app.api.v1.api import api_router
+from app.api.health import router as health_router
 from app.core.logging import setup_logging, logger
 
 # Prometheus metrics
@@ -189,6 +190,9 @@ def create_application() -> FastAPI:
     # Metrics endpoint
     metrics_app = make_asgi_app()
     app.mount("/metrics", metrics_app)
+    
+    # Health check routes (no prefix for Docker health checks)
+    app.include_router(health_router)
     
     # API routes
     app.include_router(api_router, prefix=settings.API_V1_STR)
