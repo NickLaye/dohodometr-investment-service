@@ -10,6 +10,7 @@ from typing import Dict, Any
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_client import make_asgi_app, Counter, Histogram, Gauge
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -119,6 +120,10 @@ def create_application() -> FastAPI:
             TrustedHostMiddleware,
             allowed_hosts=[str(host) for host in settings.TRUSTED_HOSTS],
         )
+
+    # Принудительный HTTPS в prod
+    if settings.ENVIRONMENT.lower() in {"production", "staging"}:
+        app.add_middleware(HTTPSRedirectMiddleware)
     
     # Rate limiting middleware
     app.state.limiter = limiter
@@ -134,6 +139,22 @@ def create_application() -> FastAPI:
         
         try:
             response = await call_next(request)
+            # Security headers (OWASP ASVS):
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            response.headers["Permissions-Policy"] = (
+                "geolocation=(), camera=(), microphone=(), payment=()"
+            )
+            # CSP: по-умолчанию self; без unsafe-inline. Настраивается далее при необходимости.
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
+            )
+            # HSTS только под HTTPS окружениями
+            if request.url.scheme == "https":
+                response.headers["Strict-Transport-Security"] = (
+                    "max-age=31536000; includeSubDomains; preload"
+                )
             
             # Метрики
             process_time = time.time() - start_time
@@ -164,35 +185,16 @@ def create_application() -> FastAPI:
         finally:
             ACTIVE_CONNECTIONS.dec()
     
-    # Health check endpoint
-    @app.get("/health", tags=["Health"])
-    async def health_check():
-        """Проверка состояния сервиса."""
-        try:
-            # Проверка базы данных
-            with engine.begin() as conn:
-                conn.execute(text("SELECT 1"))
-            
-            return {
-                "status": "healthy",
-                "version": settings.APP_VERSION,
-                "environment": settings.ENVIRONMENT,
-                "timestamp": time.time(),
-                "checks": {
-                    "database": "ok",
-                    "redis": "ok",  # TODO: добавить проверку Redis
-                }
-            }
-        except Exception as e:
-            logger.error(f"Health check failed: {e}")
-            raise HTTPException(status_code=503, detail="Service unavailable")
-    
     # Metrics endpoint
     metrics_app = make_asgi_app()
     app.mount("/metrics", metrics_app)
     
     # Health check routes (no prefix for Docker health checks)
     app.include_router(health_router)
+
+    # Экспорт OpenAPI схемы независимо от DEBUG флага для контракт-тестов
+    if settings.API_V1_STR and app.openapi_url is None:
+        app.openapi_url = "/openapi.json"
     
     # API routes
     app.include_router(api_router, prefix=settings.API_V1_STR)
