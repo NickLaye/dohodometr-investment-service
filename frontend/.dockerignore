@@ -158,8 +158,8 @@ babel.config.js
 postcss.config.js
 tailwind.config.js
 
-# Package lock files (recreated during build)
-package-lock.json
+# Package lock files - KEEP package-lock.json for npm ci
+# package-lock.json
 yarn.lock
 
 # Misc

@@ -39,7 +39,7 @@ const mockPortfolios: Portfolio[] = [
 ]
 
 const mockPerformance: PerformanceData[] = Array.from({ length: 30 }, (_, i) => ({
-  date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!,
   value: 2450000 + Math.random() * 100000 - 50000,
   return: (Math.random() - 0.5) * 0.1
 }))
@@ -57,7 +57,7 @@ export const portfoliosApi = {
 }
 
 export const analyticsApi = {
-  getPerformance: async (portfolioId: number, period: string): Promise<PerformanceData[]> => {
+  getPerformance: async (_portfolioId: number, _period: string): Promise<PerformanceData[]> => {
     await new Promise(resolve => setTimeout(resolve, 800))
     return mockPerformance
   }

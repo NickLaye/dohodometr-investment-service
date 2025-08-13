@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, _password: string) => {
     setIsLoading(true)
     try {
       // Здесь будет логика авторизации
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (email: string, _password: string, name: string) => {
     setIsLoading(true)
     try {
       // Здесь будет логика регистрации

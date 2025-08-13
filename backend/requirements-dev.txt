@@ -24,7 +24,7 @@ black==23.12.1
 isort==5.13.2
 mypy==1.8.0
 bandit==1.7.6
-safety==2.3.5
+safety>=3.0.0
 
 # Type stubs
 types-redis==4.6.0.11
@@ -39,7 +39,7 @@ mkdocs-swagger-ui-tag==0.6.8
 # Development tools
 pre-commit==3.6.0
 jupyter==1.0.0
-ipython==8.20.0
+ipython>=8.18.0,<8.21.0
 
 # Profiling and debugging
 line-profiler==4.1.1
