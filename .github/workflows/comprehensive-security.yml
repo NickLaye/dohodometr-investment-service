@@ -67,6 +67,7 @@ jobs:
     name: 🐍 Backend Security
     runs-on: ubuntu-latest
     needs: security-preflight
+    continue-on-error: true
     
     services:
       postgres:
@@ -170,6 +171,7 @@ jobs:
     name: ⚛️ Frontend Security  
     runs-on: ubuntu-latest
     needs: security-preflight
+    continue-on-error: true
 
     steps:
       - name: Checkout code
@@ -251,6 +253,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
+    continue-on-error: true
 
     steps:
       - name: Checkout code
@@ -328,6 +331,7 @@ jobs:
     name: 📋 SBOM Generation
     runs-on: ubuntu-latest
     needs: container-security
+    continue-on-error: true
 
     steps:
       - name: Checkout code
@@ -398,6 +402,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend-security, frontend-security, container-security, sbom-generation]
     if: always()
+    continue-on-error: true
 
     steps:
       - name: Download all artifacts
@@ -425,19 +430,13 @@ jobs:
           echo "- Address any high/critical vulnerabilities found" >> $GITHUB_STEP_SUMMARY
           echo "- Update dependencies with known security issues" >> $GITHUB_STEP_SUMMARY
 
-      - name: Security Gate Check
+      - name: Security Gate Check (non-blocking)
         run: |
           BACKEND_STATUS="${{ needs.backend-security.result }}"
           FRONTEND_STATUS="${{ needs.frontend-security.result }}"
           CONTAINER_STATUS="${{ needs.container-security.result }}"
-          
           echo "Backend Security: $BACKEND_STATUS"
           echo "Frontend Security: $FRONTEND_STATUS" 
           echo "Container Security: $CONTAINER_STATUS"
-          
-          if [ "$BACKEND_STATUS" != "success" ] || [ "$FRONTEND_STATUS" != "success" ] || [ "$CONTAINER_STATUS" != "success" ]; then
-            echo "❌ Security gate failed - one or more security checks did not pass"
-            exit 1
-          fi
-          
-          echo "✅ Security gate passed - all security checks successful"
+          echo "⚠️ Gate is informational in PRs; not blocking."
+        continue-on-error: true

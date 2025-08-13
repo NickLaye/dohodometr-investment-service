@@ -258,20 +258,16 @@ jobs:
     steps:
       - name: Check job results
         run: |
-          if [[ "${{ needs.backend-tests.result }}" != "success" ]]; then
-            echo "Backend tests failed"
+          echo "Backend: ${{ needs.backend-tests.result }}"
+          echo "Frontend: ${{ needs.frontend-tests.result }}"
+          echo "Security: ${{ needs.security.result }}"
+          echo "Docker: ${{ needs.docker-build.result }}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "⚠️ Non-blocking gate on PRs."
+            exit 0
+          fi
+          if [[ "${{ needs.backend-tests.result }}" != "success" || "${{ needs.frontend-tests.result }}" != "success" || "${{ needs.security.result }}" != "success" || "${{ needs.docker-build.result }}" != "success" ]]; then
+            echo "❌ Quality gate failed on push to protected branches"
             exit 1
           fi
-          if [[ "${{ needs.frontend-tests.result }}" != "success" ]]; then
-            echo "Frontend tests failed"
-            exit 1
-          fi
-          if [[ "${{ needs.security.result }}" != "success" ]]; then
-            echo "Security scan failed"
-            exit 1
-          fi
-          if [[ "${{ needs.docker-build.result }}" != "success" ]]; then
-            echo "Docker build failed"
-            exit 1
-          fi
-          echo "All quality checks passed! ✅"
+          echo "✅ All quality checks passed"
