@@ -1,5 +1,7 @@
 # Removed obsolete version field - using modern Docker Compose
 
+name: dohodometr-production
+
 services:
   # Traefik Reverse Proxy с Let's Encrypt
   traefik:

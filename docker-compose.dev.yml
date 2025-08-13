@@ -1,5 +1,7 @@
 # Removed obsolete version field - using modern Docker Compose
 
+name: dohodometr-dev
+
 services:
   postgres:
     image: postgres:16-alpine
