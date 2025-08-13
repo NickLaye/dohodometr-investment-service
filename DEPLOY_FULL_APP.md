@@ -21,18 +21,30 @@
 
 ## 📋 **ПОШАГОВАЯ ИНСТРУКЦИЯ**
 
-### **1. Подключиться к серверу**
+### **⚠️ ВАЖНО: Сначала сохраните изменения с сервера!**
+
+Если вчера вносились изменения напрямую на сервере, их нужно сохранить:
+
 ```bash
+# На сервере
 ssh root@185.23.35.41
+curl -O https://raw.githubusercontent.com/NickLaye/dohodometr-investment-service/main/deployment/save_server_changes.sh
+chmod +x save_server_changes.sh
+./save_server_changes.sh
+
+# На локальной машине - скачиваем изменения
+scp root@185.23.35.41:/opt/server_changes_*.tar.gz ./
+scp root@185.23.35.41:/opt/server_changes_*_report.txt ./
 ```
 
-### **2. Скопировать исходный код на сервер**
+### **1. Git Deploy (рекомендуемый способ)**
 
-**С локальной машины:**
 ```bash
-# Из корня проекта
-scp -r backend/ frontend/ root@185.23.35.41:/opt/dohodometr/
-scp deployment/update_to_full_app.sh root@185.23.35.41:/opt/dohodometr/deployment/
+# На сервере
+ssh root@185.23.35.41
+curl -O https://raw.githubusercontent.com/NickLaye/dohodometr-investment-service/main/deployment/git_deploy.sh
+chmod +x git_deploy.sh
+./git_deploy.sh
 ```
 
 ### **3. На сервере: проверить структуру**
