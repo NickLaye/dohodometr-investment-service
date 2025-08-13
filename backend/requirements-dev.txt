@@ -42,9 +42,9 @@ jupyter==1.0.0
 ipython>=8.18.0,<8.21.0
 
 # Profiling and debugging
-line-profiler==4.1.1
-memory-profiler==0.61.0
-py-spy==0.3.14
+# &
+# &
+# &
 
 # Load testing
 locust==2.20.0
