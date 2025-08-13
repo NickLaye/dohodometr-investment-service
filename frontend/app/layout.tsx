@@ -36,11 +36,11 @@ export const metadata: Metadata = {
     description: 'Профессиональный сервис для учета и анализа инвестиционных портфелей',
   },
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
     googleBot: {
-      index: false,
-      follow: false,
+      index: true,
+      follow: true,
     },
   },
   viewport: {

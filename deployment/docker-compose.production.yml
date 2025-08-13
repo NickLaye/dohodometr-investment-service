@@ -164,7 +164,7 @@ services:
       - "traefik.http.middlewares.www-redirect.redirectregex.replacement=https://dohodometr.ru/$${1}"
       - "traefik.http.middlewares.www-redirect.redirectregex.permanent=true"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3

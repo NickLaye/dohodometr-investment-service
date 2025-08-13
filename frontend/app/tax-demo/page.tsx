@@ -46,9 +46,10 @@ export default function TaxDemoPage() {
   const loadDemoCalculation = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/v1/tax/demo-calculation')
-      const data = await response.json()
-      setDemoResult(data.tax_calculation)
+      // Используем централизованный API клиент
+      const { api } = await import('@/lib/api-client')
+      const response = await api.tax.demoCalculation()
+      setDemoResult(response.data.tax_calculation)
     } catch (error) {
       console.error('Ошибка загрузки демо-расчета:', error)
     } finally {
@@ -59,13 +60,10 @@ export default function TaxDemoPage() {
   const calculateIISStrategy = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/v1/tax/iis-strategy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(iisParams)
-      })
-      const data = await response.json()
-      setIISResult(data)
+      // Используем централизованный API клиент
+      const { api } = await import('@/lib/api-client')
+      const response = await api.tax.iisStrategy(iisParams)
+      setIISResult(response.data)
     } catch (error) {
       console.error('Ошибка расчета стратегии ИИС:', error)
     } finally {

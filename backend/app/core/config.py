@@ -146,7 +146,7 @@ class Settings(BaseSettings):
     # MinIO / S3
     MINIO_ENDPOINT: str = "localhost:9000"
     MINIO_ACCESS_KEY: str = "admin"
-    MINIO_SECRET_KEY: str = "password123"
+    MINIO_SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     MINIO_BUCKET_NAME: str = "investment-files"
     MINIO_SECURE: bool = False
     

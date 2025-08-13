@@ -2,9 +2,9 @@
 FROM node:20-alpine AS builder
 
 # Метаданные
-LABEL maintainer="YouInvest Team"
+LABEL maintainer="Dohodometr Team"
 LABEL version="1.0.0"
-LABEL description="YouInvest Frontend"
+LABEL description="Dohodometr Frontend"
 
 # Рабочая директория
 WORKDIR /app
@@ -44,7 +44,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000 || exit 1
+    CMD curl -f http://localhost:3000/ || exit 1
 
 # Команда запуска
 CMD ["node", "server.js"]

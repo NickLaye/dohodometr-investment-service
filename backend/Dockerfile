@@ -1,9 +1,9 @@
 FROM python:3.12-slim
 
 # Метаданные
-LABEL maintainer="YouInvest Team"
+LABEL maintainer="Dohodometr Team"
 LABEL version="1.0.0"
-LABEL description="YouInvest Backend API"
+LABEL description="Dohodometr Backend API"
 
 # Переменные окружения для production
 ENV PYTHONDONTWRITEBYTECODE=1 \
