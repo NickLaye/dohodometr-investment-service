@@ -1,5 +1,8 @@
 'use client'
 
+// Отключаем статическую генерацию из-за динамического контента
+export const dynamic = 'force-dynamic'
+
 import React from 'react'
 import { Header } from '@/components/layout/header'
 import { HeroSection } from '@/components/sections/hero-section'

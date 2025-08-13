@@ -1,5 +1,8 @@
 'use client'
 
+// Отключаем статическую генерацию для динамических страниц
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { Calculator, TrendingUp, Shield, DollarSign, Calendar, Info, CheckCircle, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

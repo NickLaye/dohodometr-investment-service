@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dohodometr.ru/sitemap.xml

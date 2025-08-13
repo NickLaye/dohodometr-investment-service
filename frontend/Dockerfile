@@ -16,7 +16,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies with exact versions
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Development dependencies stage
 FROM node:20-alpine AS builder
@@ -26,9 +26,9 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Copy package files and install all dependencies
+# Copy package files and install all dependencies  
 COPY package*.json ./
-RUN npm ci --only=production --no-audit --no-fund || npm install --only=production --no-audit --no-fund
+RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
 # Copy source code
 COPY . .
