@@ -24,7 +24,7 @@ async def get_performance(
     portfolio_id: int,
     period: Optional[str] = Query(None, description="1d, 1w, 1m, 3m, 6m, 1y, 3y, 5y, inception"),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение метрик производительности портфеля."""
     
@@ -174,7 +174,7 @@ async def get_allocation(
     portfolio_id: int,
     by: str = Query("asset_class", description="asset_class, sector, country, currency"),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение распределения активов портфеля."""
     
@@ -278,7 +278,7 @@ async def get_allocation(
 async def get_pnl_breakdown(
     portfolio_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение детализации прибылей и убытков."""
     
@@ -319,7 +319,7 @@ async def get_top_positions(
     limit: int = Query(10, description="Количество топ позиций"),
     sort_by: str = Query("value", description="value, pnl_percent, weight"),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение топ позиций портфеля."""
     

@@ -61,7 +61,7 @@ async def get_transactions(
     limit: int = 100,
     offset: int = 0,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение списка транзакций с фильтрами."""
     transaction_repo = TransactionRepository(db)
@@ -153,7 +153,7 @@ async def get_transactions(
 async def create_transaction(
     transaction_data: TransactionCreate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Создание новой транзакции."""
     # Проверяем доступ к счету
@@ -215,7 +215,7 @@ async def create_transaction(
 async def bulk_create_transactions(
     transactions_data: List[TransactionCreate],
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Массовое создание транзакций."""
     # Проверяем доступ ко всем счетам
@@ -258,7 +258,7 @@ async def import_csv(
     account_id: int = Form(...),
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Импорт транзакций из CSV файла."""
     
@@ -345,7 +345,7 @@ async def get_import_example(broker: str):
 async def get_transaction(
     transaction_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение транзакции по ID."""
     transaction_repo = TransactionRepository(db)
@@ -398,7 +398,7 @@ async def get_transaction(
 async def delete_transaction(
     transaction_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Удаление транзакции."""
     transaction_repo = TransactionRepository(db)
