@@ -95,6 +95,19 @@ exclude = [
 "tests/*" = ["S101", "ARG001", "ARG002"]
 "migrations/*" = ["ALL"]
 "conftest.py" = ["ARG001"]
+"app/api/**" = [
+    "B008",  # Depends/File in defaults (FastAPI pattern)
+    "C901",  # complex functions allowed in endpoints
+    "PLR0912",  # too many branches
+    "E501",  # long lines in docstrings/responses
+    "RUF001", "RUF002", "RUF003",  # ambiguous unicode in RU texts
+    "TRY200", "TRY300", "TRY301", "B904",  # exception chaining preferences
+    "RET504", "PLW0127",  # style nits
+    "UP007"  # typing union modernisation not required
+]
+"app/api/health.py" = [
+    "S108", "PTH123", "PTH107", "ERA001", "E501", "TRY200", "B904"
+]
 
 [tool.ruff.isort]
 known-first-party = ["app"]
