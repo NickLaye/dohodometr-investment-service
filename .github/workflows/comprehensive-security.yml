@@ -1,0 +1,444 @@
+name: 🛡️ Comprehensive Security Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      run_penetration_test:
+        description: 'Run penetration testing'
+        required: false
+        type: boolean
+        default: false
+
+# Minimum permissions by default
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  # Pre-flight security checks
+  security-preflight:
+    name: 🔍 Security Pre-flight
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+        with:
+          fetch-depth: 0  # Full history for better secret detection
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@cb7149a9c3c4ab1acc95a652dbc5c2aad4499d8c # v2.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+
+      - name: Validate Docker Compose files
+        run: |
+          docker-compose -f docker-compose.dev.yml config > /dev/null
+          docker-compose -f docker-compose.dohodometr.yml config > /dev/null
+          echo "✅ All Docker Compose files are valid"
+
+      - name: Check security configurations
+        run: |
+          # Check if security files exist
+          test -f .secrets.baseline || echo "⚠️ Missing .secrets.baseline"
+          test -f .pre-commit-config.yaml || echo "⚠️ Missing pre-commit config"
+          test -f .commitlintrc.json || echo "⚠️ Missing commitlint config"
+          test -f .yamllint.yml || echo "⚠️ Missing yamllint config"
+          echo "✅ Security configuration check completed"
+
+  # Backend security testing
+  backend-security:
+    name: 🐍 Backend Security
+    runs-on: ubuntu-latest
+    needs: security-preflight
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5ccb29d8773c3f3f653e1705f474dfaa8a06a912 # v4.7.1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Python dependencies
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v3.3.0
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements*.txt') }}
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Security linting with Bandit
+        run: |
+          cd backend
+          bandit -r app/ -f json -o bandit-security-report.json
+          bandit -r app/ -f txt
+
+      - name: Security dependency check with Safety
+        run: |
+          cd backend
+          safety check --json --output safety-report.json --continue-on-error
+          safety check
+
+      - name: Advanced dependency audit with pip-audit
+        run: |
+          cd backend
+          pip-audit --format=json --output=pip-audit-report.json --progress-spinner=off
+          pip-audit
+
+      - name: Code quality with Ruff (security focus)
+        run: |
+          cd backend
+          ruff check . --select=S,B,A,SIM,C4,ICN,PIE,PYI,RSE,RET,SLF,TID,TCH,ARG,PTH,ERA,PGH,PL,TRY,FLY,PERF,FURB,LOG,RUF --output-format=github
+
+      - name: Type checking with MyPy
+        run: |
+          cd backend
+          mypy . --strict --show-error-codes
+
+      - name: Run security-focused tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: test-secret-key-for-security-ci
+          JWT_SECRET_KEY: test-jwt-secret-key-for-security-ci
+          ENCRYPTION_SALT: test-encryption-salt-for-security-ci
+          ENVIRONMENT: testing
+        run: |
+          cd backend
+          pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=80 -m "not slow"
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        if: always()
+        with:
+          name: backend-security-reports
+          path: |
+            backend/bandit-security-report.json
+            backend/safety-report.json
+            backend/pip-audit-report.json
+            backend/coverage.xml
+          retention-days: 30
+
+  # Frontend security testing
+  frontend-security:
+    name: ⚛️ Frontend Security  
+    runs-on: ubuntu-latest
+    needs: security-preflight
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@8f152de45cc393bb48ce5d89d36b731f54556e65 # v4.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Security linting with ESLint
+        run: |
+          cd frontend
+          npm run lint -- --config .eslintrc.security.js --format json --output-file eslint-security-report.json
+          npm run lint -- --config .eslintrc.security.js
+
+      - name: Type checking
+        run: |
+          cd frontend
+          npm run type-check
+
+      - name: Security audit with npm
+        run: |
+          cd frontend
+          npm audit --audit-level=moderate --json > npm-audit-report.json || true
+          npm audit --audit-level=moderate
+
+      - name: Check for known vulnerabilities with yarn audit
+        run: |
+          cd frontend
+          npx yarn audit --json > yarn-audit-report.json || true
+          npx yarn audit
+
+      - name: Dependency license check
+        run: |
+          cd frontend
+          npx license-checker --json --out license-report.json
+          npx license-checker --summary
+
+      - name: Build security check
+        run: |
+          cd frontend
+          npm run build
+          
+          # Check for sensitive data in build output
+          if grep -r "password\|secret\|key\|token" .next/ --exclude-dir=static --exclude="*.map" | grep -v "placeholder"; then
+            echo "⚠️ Potential sensitive data found in build output"
+            exit 1
+          fi
+
+      - name: Run security-focused tests
+        run: |
+          cd frontend
+          npm run test -- --coverage --passWithNoTests
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        if: always()
+        with:
+          name: frontend-security-reports
+          path: |
+            frontend/eslint-security-report.json
+            frontend/npm-audit-report.json
+            frontend/yarn-audit-report.json
+            frontend/license-report.json
+          retention-days: 30
+
+  # Container security scanning
+  container-security:
+    name: 🐳 Container Security
+    runs-on: ubuntu-latest
+    needs: [backend-security, frontend-security]
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+
+      - name: Build backend image for scanning
+        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: dohodometr-backend:security-scan
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image for scanning
+        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: dohodometr-frontend:security-scan
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner - Backend
+        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # v0.11.2
+        with:
+          image-ref: 'dohodometr-backend:security-scan'
+          format: 'sarif'
+          output: 'backend-trivy-results.sarif'
+
+      - name: Run Trivy vulnerability scanner - Frontend
+        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # v0.11.2
+        with:
+          image-ref: 'dohodometr-frontend:security-scan'
+          format: 'sarif'
+          output: 'frontend-trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+        if: always()
+        with:
+          sarif_file: 'backend-trivy-results.sarif'
+          category: 'trivy-backend'
+
+      - name: Upload Frontend Trivy results
+        uses: github/codeql-action/upload-sarif@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+        if: always()
+        with:
+          sarif_file: 'frontend-trivy-results.sarif'
+          category: 'trivy-frontend'
+
+      - name: Run Hadolint on Dockerfiles
+        uses: hadolint/hadolint-action@f988afea3da57ee48710a9795b6bb677cc901183 # v3.1.0
+        with:
+          dockerfile: backend/Dockerfile
+          format: sarif
+          output-file: backend-hadolint.sarif
+
+      - name: Run Hadolint on Frontend Dockerfile
+        uses: hadolint/hadolint-action@f988afea3da57ee48710a9795b6bb677cc901183 # v3.1.0
+        with:
+          dockerfile: frontend/Dockerfile
+          format: sarif
+          output-file: frontend-hadolint.sarif
+
+  # SBOM Generation
+  sbom-generation:
+    name: 📋 SBOM Generation
+    runs-on: ubuntu-latest
+    needs: container-security
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Generate SBOM for Backend
+        uses: anchore/sbom-action@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0.14.3
+        with:
+          path: ./backend
+          format: cyclone-dx-json
+          output-file: backend-sbom.json
+
+      - name: Generate SBOM for Frontend
+        uses: anchore/sbom-action@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0.14.3
+        with:
+          path: ./frontend
+          format: cyclone-dx-json
+          output-file: frontend-sbom.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        with:
+          name: sbom-reports
+          path: |
+            backend-sbom.json
+            frontend-sbom.json
+          retention-days: 90
+
+  # Penetration testing (optional)
+  penetration-testing:
+    name: 🎯 Penetration Testing
+    runs-on: ubuntu-latest
+    needs: [container-security]
+    if: github.event.inputs.run_penetration_test == 'true' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Set up test environment
+        run: |
+          cp env.example .env
+          docker-compose -f docker-compose.dev.yml up -d postgres redis
+          sleep 30
+
+      - name: Install penetration testing tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nmap nikto dirb sqlmap
+
+      - name: Run automated penetration tests
+        run: |
+          chmod +x security/penetration_testing.sh
+          ./security/penetration_testing.sh http://localhost:8000
+        continue-on-error: true
+
+      - name: Upload penetration test results
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        if: always()
+        with:
+          name: penetration-test-results
+          path: security/pentest_reports/
+          retention-days: 30
+
+  # Security summary and reporting
+  security-summary:
+    name: 📊 Security Summary
+    runs-on: ubuntu-latest
+    needs: [backend-security, frontend-security, container-security, sbom-generation]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          path: security-reports
+
+      - name: Generate Security Summary
+        run: |
+          echo "# 🛡️ Security Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend Security | ${{ needs.backend-security.result == 'success' && '✅ Passed' || '❌ Failed' }} | Code analysis, dependency checks |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend Security | ${{ needs.frontend-security.result == 'success' && '✅ Passed' || '❌ Failed' }} | Linting, auditing, build checks |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container Security | ${{ needs.container-security.result == 'success' && '✅ Passed' || '❌ Failed' }} | Image vulnerability scanning |" >> $GITHUB_STEP_SUMMARY
+          echo "| SBOM Generation | ${{ needs.sbom-generation.result == 'success' && '✅ Passed' || '❌ Failed' }} | Software bill of materials |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Review security scan results in the Security tab" >> $GITHUB_STEP_SUMMARY
+          echo "- Download detailed reports from workflow artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Address any high/critical vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          echo "- Update dependencies with known security issues" >> $GITHUB_STEP_SUMMARY
+
+      - name: Security Gate Check
+        run: |
+          BACKEND_STATUS="${{ needs.backend-security.result }}"
+          FRONTEND_STATUS="${{ needs.frontend-security.result }}"
+          CONTAINER_STATUS="${{ needs.container-security.result }}"
+          
+          echo "Backend Security: $BACKEND_STATUS"
+          echo "Frontend Security: $FRONTEND_STATUS" 
+          echo "Container Security: $CONTAINER_STATUS"
+          
+          if [ "$BACKEND_STATUS" != "success" ] || [ "$FRONTEND_STATUS" != "success" ] || [ "$CONTAINER_STATUS" != "success" ]; then
+            echo "❌ Security gate failed - one or more security checks did not pass"
+            exit 1
+          fi
+          
+          echo "✅ Security gate passed - all security checks successful"

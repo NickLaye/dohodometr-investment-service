@@ -1,0 +1,318 @@
+name: Security Hardened Scanning
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Minimal permissions principle
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+  pull-requests: read
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+
+jobs:
+  # Gitleaks secret detection
+  secret-detection:
+    name: Secret Detection with Gitleaks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+        with:
+          fetch-depth: 0
+          
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@cb7149a9c3c4ab1acc95a652dbc5c2aad4499d8c # v2.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+
+  # Enhanced CodeQL Analysis
+  codeql-analysis:
+    name: Enhanced CodeQL Analysis
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'python']
+        
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+          queries: +security-and-quality,security-extended
+
+      - name: Set up Python
+        if: matrix.language == 'python'
+        uses: actions/setup-python@5ccb29d8773c3f3f653e1705f474dfaa8a06a912 # v4.7.1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        if: matrix.language == 'python'
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set up Node.js
+        if: matrix.language == 'javascript'
+        uses: actions/setup-node@8f152de45cc393bb48ce5d89d36b731f54556e65 # v4.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Node.js dependencies
+        if: matrix.language == 'javascript'
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+        with:
+          category: "/language:${{matrix.language}}"
+
+  # SBOM Generation
+  sbom-generation:
+    name: Generate Software Bill of Materials
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Generate SBOM for Backend
+        uses: anchore/sbom-action@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0.14.3
+        with:
+          path: ./backend
+          format: cyclone-dx-json
+          output-file: backend-sbom.json
+
+      - name: Generate SBOM for Frontend  
+        uses: anchore/sbom-action@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0.14.3
+        with:
+          path: ./frontend
+          format: cyclone-dx-json
+          output-file: frontend-sbom.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        with:
+          name: sbom-reports
+          path: |
+            backend-sbom.json
+            frontend-sbom.json
+          retention-days: 90
+
+  # Enhanced Dependency Scanning
+  dependency-audit:
+    name: Enhanced Dependency Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5ccb29d8773c3f3f653e1705f474dfaa8a06a912 # v4.7.1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit pip-audit
+
+      - name: Install Backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Python Security Audit with pip-audit
+        run: |
+          cd backend
+          pip-audit --format=json --output=pip-audit-report.json
+        continue-on-error: true
+
+      - name: Python Security Check with Safety
+        run: |
+          cd backend
+          safety check --json --output safety-report.json
+        continue-on-error: true
+
+      - name: Python Security Scan with Bandit
+        run: |
+          cd backend
+          bandit -r app/ -f json -o bandit-report.json
+        continue-on-error: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@8f152de45cc393bb48ce5d89d36b731f54556e65 # v4.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Node.js Security Audit
+        run: |
+          cd frontend
+          npm audit --audit-level=moderate --json > npm-audit-report.json
+        continue-on-error: true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        if: always()
+        with:
+          name: security-audit-reports
+          path: |
+            backend/pip-audit-report.json
+            backend/safety-report.json
+            backend/bandit-report.json
+            frontend/npm-audit-report.json
+          retention-days: 30
+
+  # Enhanced Docker Security Scanning
+  docker-security-scan:
+    name: Enhanced Docker Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+
+      - name: Build backend image for scanning
+        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: dohodometr-backend:scan
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image for scanning
+        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: dohodometr-frontend:scan
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner on backend
+        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # v0.11.2
+        with:
+          image-ref: 'dohodometr-backend:scan'
+          format: 'sarif'
+          output: 'backend-trivy-results.sarif'
+
+      - name: Run Trivy vulnerability scanner on frontend
+        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # v0.11.2
+        with:
+          image-ref: 'dohodometr-frontend:scan'
+          format: 'sarif'
+          output: 'frontend-trivy-results.sarif'
+
+      - name: Upload Backend Trivy scan results
+        uses: github/codeql-action/upload-sarif@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+        if: always()
+        with:
+          sarif_file: 'backend-trivy-results.sarif'
+          category: 'trivy-backend'
+
+      - name: Upload Frontend Trivy scan results
+        uses: github/codeql-action/upload-sarif@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+        if: always()
+        with:
+          sarif_file: 'frontend-trivy-results.sarif'
+          category: 'trivy-frontend'
+
+  # Infrastructure Security Scan
+  infrastructure-security:
+    name: Infrastructure Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Run Checkov on Infrastructure as Code
+        uses: bridgecrewio/checkov-action@45edc5dbeff88ab7e7ed5b4d7ebad82a1e5da1d1 # v12.2345.0
+        with:
+          directory: .
+          framework: dockerfile,docker_compose,github_actions
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          quiet: true
+
+      - name: Upload Checkov scan results
+        uses: github/codeql-action/upload-sarif@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+        if: always()
+        with:
+          sarif_file: checkov-results.sarif
+          category: 'checkov-infrastructure'
+
+  # Security Summary Report
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [secret-detection, codeql-analysis, sbom-generation, dependency-audit, docker-security-scan, infrastructure-security]
+    if: always()
+    
+    steps:
+      - name: Generate Security Summary
+        run: |
+          echo "# 🛡️ Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Results Overview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Check | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Detection (Gitleaks) | ${{ needs.secret-detection.result == 'success' && '✅ Passed' || '❌ Failed' }} | No secrets detected |" >> $GITHUB_STEP_SUMMARY
+          echo "| CodeQL Analysis | ${{ needs.codeql-analysis.result == 'success' && '✅ Passed' || '❌ Failed' }} | SAST completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| SBOM Generation | ${{ needs.sbom-generation.result == 'success' && '✅ Passed' || '❌ Failed' }} | Software inventory created |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Audit | ${{ needs.dependency-audit.result == 'success' && '✅ Passed' || '❌ Failed' }} | Vulnerability scan completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Security | ${{ needs.docker-security-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} | Container image scan |" >> $GITHUB_STEP_SUMMARY
+          echo "| Infrastructure Security | ${{ needs.infrastructure-security.result == 'success' && '✅ Passed' || '❌ Failed' }} | IaC security validation |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Review security alerts in the Security tab" >> $GITHUB_STEP_SUMMARY
+          echo "- Download SBOM and security reports from artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Address any critical or high severity findings" >> $GITHUB_STEP_SUMMARY
+          echo "- Update dependencies with known vulnerabilities" >> $GITHUB_STEP_SUMMARY

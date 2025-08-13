@@ -1,0 +1,57 @@
+# CODEOWNERS file for Investment Service Security
+# 
+# This file defines which teams or individuals must review
+# changes to specific parts of the codebase.
+#
+# Order is important - the last matching pattern takes precedence.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global fallback - require review from core team
+* @yourusername
+
+# Security-critical files require security team review
+/.github/ @yourusername @security-team
+/backend/app/core/security.py @yourusername @security-team
+/backend/app/core/config.py @yourusername @security-team
+/deployment/ @yourusername @devops-team
+/docker-compose*.yml @yourusername @devops-team
+/Dockerfile* @yourusername @devops-team
+/SECURITY.md @yourusername @security-team
+/.secrets.baseline @yourusername @security-team
+
+# Backend code requires backend team review
+/backend/ @yourusername @backend-team
+/backend/app/api/ @yourusername @backend-team
+/backend/app/models/ @yourusername @backend-team
+/backend/app/services/ @yourusername @backend-team
+/backend/requirements*.txt @yourusername @backend-team
+
+# Frontend code requires frontend team review  
+/frontend/ @yourusername @frontend-team
+/frontend/components/ @yourusername @frontend-team
+/frontend/app/ @yourusername @frontend-team
+/frontend/lib/ @yourusername @frontend-team
+/frontend/package*.json @yourusername @frontend-team
+
+# Database migrations require careful review
+/backend/migrations/ @yourusername @backend-team @dba-team
+
+# CI/CD and infrastructure
+/.github/workflows/ @yourusername @devops-team @security-team
+/infra/ @yourusername @devops-team
+/deployment/ @yourusername @devops-team
+
+# Documentation
+/README.md @yourusername @docs-team
+/CONTRIBUTING.md @yourusername @docs-team
+/docs/ @yourusername @docs-team
+
+# Test files
+/backend/tests/ @yourusername @backend-team
+/frontend/tests/ @yourusername @frontend-team
+
+# Configuration files that affect security
+/.env.example @yourusername @security-team
+/pyproject.toml @yourusername @backend-team
+/tsconfig.json @yourusername @frontend-team
+/next.config.js @yourusername @frontend-team

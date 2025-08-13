@@ -7,7 +7,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "06:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     reviewers:
       - "yourusername"
     assignees:
@@ -19,6 +19,17 @@ updates:
       - "dependencies"
       - "backend"
       - "python"
+      - "security"
+    # Security updates get higher priority
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Group security updates
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   # Frontend Node.js dependencies
   - package-ecosystem: "npm"
@@ -27,7 +38,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "06:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     reviewers:
       - "yourusername"
     assignees:
@@ -39,6 +50,17 @@ updates:
       - "dependencies"
       - "frontend"
       - "javascript"
+      - "security"
+    # Security updates get higher priority
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Group security updates
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   # Docker images
   - package-ecosystem: "docker"
