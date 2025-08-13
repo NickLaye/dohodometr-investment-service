@@ -1,0 +1,90 @@
+# Prometheus configuration for Investment Service
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'investment-service'
+    replica: 'main'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rules
+rule_files:
+  - "rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Traefik metrics
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['traefik:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # FastAPI application metrics
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:8000']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    params:
+      format: ['prometheus']
+
+  # PostgreSQL metrics (if pg_exporter is used)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Redis metrics (if redis_exporter is used)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Node metrics (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # MinIO metrics
+  - job_name: 'minio'
+    static_configs:
+      - targets: ['minio:9000']
+    scrape_interval: 30s
+    metrics_path: /minio/v2/metrics/cluster
+
+  # Celery metrics (if celery-exporter is used)
+  - job_name: 'celery'
+    static_configs:
+      - targets: ['celery-exporter:9540']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+# Remote write (для внешних систем мониторинга)
+remote_write: []
+
+# Remote read (для внешних систем мониторинга)
+remote_read: []

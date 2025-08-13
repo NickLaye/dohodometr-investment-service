@@ -1,0 +1,46 @@
+name: "Investment Service CodeQL Config"
+
+# Disable default queries and specify custom query suites
+disable-default-queries: false
+
+# Specify additional queries to run
+queries:
+  - name: security-and-quality
+    uses: security-and-quality
+  - name: security-extended
+    uses: security-extended
+
+# Paths to ignore during analysis
+paths-ignore:
+  - "backend/migrations/**"
+  - "backend/tests/**"
+  - "frontend/tests/**"
+  - "frontend/node_modules/**"
+  - "backend/__pycache__/**"
+  - "**/*.md"
+  - "**/*.txt"
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "**/package-lock.json"
+  - "**/requirements*.txt"
+
+# Paths to analyze (if not specified, all paths are analyzed)
+paths:
+  - "backend/app/**"
+  - "frontend/app/**"
+  - "frontend/components/**"
+  - "frontend/lib/**"
+  - "frontend/hooks/**"
+
+# Custom query packs
+packs:
+  python:
+    - codeql/python-queries:AlertSuppression.ql
+    - codeql/python-queries:Security/CWE-079/ReflectedXss.ql
+    - codeql/python-queries:Security/CWE-089/SqlInjection.ql
+    - codeql/python-queries:Security/CWE-094/CodeInjection.ql
+  javascript:
+    - codeql/javascript-queries:Security/CWE-079/DomBasedXss.ql
+    - codeql/javascript-queries:Security/CWE-079/ReflectedXss.ql
+    - codeql/javascript-queries:Security/CWE-089/SqlInjection.ql
+    - codeql/javascript-queries:Security/CWE-094/CodeInjection.ql

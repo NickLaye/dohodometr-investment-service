@@ -1,0 +1,297 @@
+version: '3.8'
+
+services:
+  # Traefik Reverse Proxy с Let's Encrypt
+  traefik:
+    image: traefik:v3.0
+    container_name: dohodometr-traefik
+    restart: unless-stopped
+    command:
+      # API и Dashboard
+      - --api.dashboard=true
+      - --api.insecure=false
+      
+      # Провайдеры
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=dohodometr-network
+      
+      # Entrypoints
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      
+      # Let's Encrypt
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=admin@dohodometr.ru
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      
+      # Логирование
+      - --log.level=INFO
+      - --accesslog=true
+      
+      # Метрики
+      - --metrics.prometheus=true
+      - --metrics.prometheus.addEntryPointsLabels=true
+      - --metrics.prometheus.addServicesLabels=true
+    
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Traefik Dashboard
+    
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+      - ./logs/traefik:/var/log/traefik
+    
+    networks:
+      - dohodometr-network
+    
+    labels:
+      - "traefik.enable=true"
+      
+      # HTTP -> HTTPS редирект
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      - "traefik.http.routers.redirect-https.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.redirect-https.entrypoints=web"
+      - "traefik.http.routers.redirect-https.middlewares=redirect-to-https"
+      
+      # Traefik Dashboard
+      - "traefik.http.routers.traefik.rule=Host(`traefik.dohodometr.ru`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      
+      # Security Headers
+      - "traefik.http.middlewares.security-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.security-headers.headers.customResponseHeaders.X-Frame-Options=DENY"
+      - "traefik.http.middlewares.security-headers.headers.customResponseHeaders.X-Content-Type-Options=nosniff"
+      - "traefik.http.middlewares.security-headers.headers.customResponseHeaders.Referrer-Policy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.security-headers.headers.customResponseHeaders.Strict-Transport-Security=max-age=31536000; includeSubDomains"
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: dohodometr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dohodometr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_change_me}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - dohodometr-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache & Sessions
+  redis:
+    image: redis:7-alpine
+    container_name: dohodometr-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password_change_me}
+    volumes:
+      - redis_data:/data
+    networks:
+      - dohodometr-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API
+  backend:
+    image: dohodometr-backend:latest
+    container_name: dohodometr-backend
+    restart: unless-stopped
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-secure_password_change_me}@postgres:5432/dohodometr
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-your_secret_key_change_me}
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=https://dohodometr.ru,https://www.dohodometr.ru
+      - TRUSTED_HOSTS=dohodometr.ru,www.dohodometr.ru
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs/backend:/app/logs
+    networks:
+      - dohodometr-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      
+      # API Routes
+      - "traefik.http.routers.dohodometr-api.rule=Host(`dohodometr.ru`,`www.dohodometr.ru`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.dohodometr-api.entrypoints=websecure"
+      - "traefik.http.routers.dohodometr-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dohodometr-api.middlewares=security-headers"
+      - "traefik.http.services.dohodometr-api.loadbalancer.server.port=8000"
+      
+      # Health Check
+      - "traefik.http.routers.dohodometr-health.rule=Host(`dohodometr.ru`,`www.dohodometr.ru`) && Path(`/health`)"
+      - "traefik.http.routers.dohodometr-health.entrypoints=websecure"
+      - "traefik.http.routers.dohodometr-health.tls.certresolver=letsencrypt"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend (Next.js)
+  frontend:
+    image: dohodometr-frontend:latest
+    container_name: dohodometr-frontend
+    restart: unless-stopped
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - NEXT_PUBLIC_API_URL=https://dohodometr.ru/api
+      - NEXT_PUBLIC_APP_NAME=Dohodometr
+      - NEXT_PUBLIC_APP_URL=https://dohodometr.ru
+      - NEXT_PUBLIC_ENVIRONMENT=production
+    networks:
+      - dohodometr-network
+    labels:
+      - "traefik.enable=true"
+      
+      # Main Website
+      - "traefik.http.routers.dohodometr.rule=Host(`dohodometr.ru`,`www.dohodometr.ru`)"
+      - "traefik.http.routers.dohodometr.entrypoints=websecure"
+      - "traefik.http.routers.dohodometr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dohodometr.middlewares=security-headers,www-redirect"
+      - "traefik.http.services.dohodometr.loadbalancer.server.port=3000"
+      
+      # WWW to non-WWW redirect
+      - "traefik.http.middlewares.www-redirect.redirectregex.regex=^https://www\\.dohodometr\\.ru/(.*)"
+      - "traefik.http.middlewares.www-redirect.redirectregex.replacement=https://dohodometr.ru/$${1}"
+      - "traefik.http.middlewares.www-redirect.redirectregex.permanent=true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: dohodometr-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_BROWSER_REDIRECT_URL: https://minio.dohodometr.ru
+    volumes:
+      - minio_data:/data
+    networks:
+      - dohodometr-network
+    labels:
+      - "traefik.enable=true"
+      
+      # MinIO API
+      - "traefik.http.routers.minio-api.rule=Host(`minio-api.dohodometr.ru`)"
+      - "traefik.http.routers.minio-api.entrypoints=websecure"
+      - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+      
+      # MinIO Console
+      - "traefik.http.routers.minio-console.rule=Host(`minio.dohodometr.ru`)"
+      - "traefik.http.routers.minio-console.entrypoints=websecure"
+      - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+
+  # Celery Worker
+  celery-worker:
+    image: dohodometr-backend:latest
+    container_name: dohodometr-celery-worker
+    restart: unless-stopped
+    command: celery -A app.core.celery worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-secure_password_change_me}@postgres:5432/dohodometr
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-your_secret_key_change_me}
+      - ENVIRONMENT=production
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs/celery:/app/logs
+    networks:
+      - dohodometr-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    image: dohodometr-backend:latest
+    container_name: dohodometr-celery-beat
+    restart: unless-stopped
+    command: celery -A app.core.celery beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-secure_password_change_me}@postgres:5432/dohodometr
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-your_secret_key_change_me}
+      - ENVIRONMENT=production
+    volumes:
+      - ./logs/celery-beat:/app/logs
+    networks:
+      - dohodometr-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Flower (Celery Monitoring)
+  flower:
+    image: mher/flower:latest
+    container_name: dohodometr-flower
+    restart: unless-stopped
+    environment:
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379/0
+      - FLOWER_PORT=5555
+    networks:
+      - dohodometr-network
+    depends_on:
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flower.rule=Host(`flower.dohodometr.ru`)"
+      - "traefik.http.routers.flower.entrypoints=websecure"
+      - "traefik.http.routers.flower.tls.certresolver=letsencrypt"
+      - "traefik.http.services.flower.loadbalancer.server.port=5555"
+      # Basic Auth для защиты
+      - "traefik.http.routers.flower.middlewares=flower-auth"
+      - "traefik.http.middlewares.flower-auth.basicauth.users=admin:$$2y$$10$$X8H2Z9Y7zVJ4qD3nE8k1bO8mF5Q6gP2wL9rS3uN4vT7yG8hA1zA1C"
+
+networks:
+  dohodometr-network:
+    driver: bridge
+    name: dohodometr-network
+
+volumes:
+  postgres_data:
+    name: dohodometr-postgres-data
+  redis_data:
+    name: dohodometr-redis-data
+  minio_data:
+    name: dohodometr-minio-data

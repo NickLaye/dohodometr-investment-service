@@ -1,0 +1,239 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Investment Service - Business Metrics",
+    "tags": ["investment-service", "business"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "User Registrations",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(user_registrations_total[1h])",
+            "legendFormat": "Hourly Registration Rate"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "short",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Total Users",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "total_users",
+            "legendFormat": "Total Users"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Portfolio Creation Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(portfolio_created_total[1h])",
+            "legendFormat": "Portfolios Created per Hour"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "short",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Total Portfolios",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "total_portfolios",
+            "legendFormat": "Total Portfolios"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "Transaction Volume",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(transactions_processed_total[1h])",
+            "legendFormat": "{{ type }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "short",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Import Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(portfolio_imports_successful_total[1h]) / rate(portfolio_imports_total[1h]) * 100",
+            "legendFormat": "Success Rate %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 90},
+                {"color": "green", "value": 95}
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 7,
+        "title": "Portfolio Value Distribution",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, portfolio_value_bucket)",
+            "legendFormat": "50th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.90, portfolio_value_bucket)",
+            "legendFormat": "90th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.95, portfolio_value_bucket)",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "currencyUSD",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "API Usage by Endpoint",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{ handler }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "reqps",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        }
+      },
+      {
+        "id": 9,
+        "title": "Revenue Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(portfolio_total_value)",
+            "legendFormat": "Total Assets Under Management"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "currencyUSD",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 32
+        }
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "refresh": "5m"
+  }
+}

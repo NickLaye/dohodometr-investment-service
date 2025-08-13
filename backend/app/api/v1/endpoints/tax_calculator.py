@@ -21,6 +21,31 @@ from app.repositories.transaction import TransactionRepository
 router = APIRouter()
 
 
+@router.get("/")
+async def tax_module_info():
+    """Информация о налоговом модуле."""
+    return {
+        "module": "Tax Calculator RF",
+        "version": "1.0.0",
+        "description": "Калькулятор налогов для российских инвесторов",
+        "endpoints": {
+            "calculate": "POST /calculate - Расчет налогов для портфелей",
+            "iis_strategy": "POST /iis-strategy - Оптимальная стратегия ИИС",
+            "demo_calculation": "GET /demo-calculation - Демо расчет",
+            "tax_deadlines": "GET /tax-deadlines - Налоговые сроки",
+            "tax_rates": "GET /tax-rates - Актуальные ставки",
+            "health": "GET /health - Проверка работоспособности"
+        },
+        "features": [
+            "НДФЛ расчет для резидентов и нерезидентов",
+            "Оптимизация ИИС типа А и Б",
+            "Льгота долгосрочного владения (ЛДВ)",
+            "Зачет убытков между операциями",
+            "Дивидендные и купонные доходы"
+        ]
+    }
+
+
 class TaxCalculationRequest(BaseModel):
     """Запрос расчета налогов."""
     portfolio_ids: List[int] = Field(..., description="ID портфелей для расчета")

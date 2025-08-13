@@ -1,0 +1,125 @@
+# Динамическая конфигурация Traefik для Investment Service
+
+http:
+  middlewares:
+    # Security headers
+    security-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlMaxAge: 86400
+        addVaryHeader: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        frameDeny: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+        customResponseHeaders:
+          X-Robots-Tag: "none"
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Permissions-Policy: "camera=(), microphone=(), geolocation=(), payment=()"
+
+    # Rate limiting
+    api-rate-limit:
+      rateLimit:
+        burst: 100
+        average: 50
+        period: 1m
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+    auth-rate-limit:
+      rateLimit:
+        burst: 10
+        average: 5
+        period: 1m
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+    # Compression
+    compression:
+      compress: {}
+
+    # CORS for API
+    api-cors:
+      headers:
+        accessControlAllowOriginList:
+          - "https://investment-service.ru"
+          - "https://www.investment-service.ru"
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 86400
+        addVaryHeader: true
+
+    # Strip prefix for API
+    api-strip-prefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
+
+    # Redirect to HTTPS
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  # Services pool для load balancing (будущее расширение)
+  services:
+    backend-pool:
+      loadBalancer:
+        servers:
+          - url: "http://backend:8000"
+        healthCheck:
+          path: "/health"
+          interval: "30s"
+          timeout: "10s"
+
+    frontend-pool:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:3000"
+        healthCheck:
+          path: "/health"
+          interval: "30s"
+          timeout: "10s"
+
+# TCP роутинг (для баз данных через Traefik при необходимости)
+tcp:
+  routers: {}
+  services: {}
+
+# TLS конфигурация
+tls:
+  options:
+    default:
+      sslStrategies:
+        - "tls.SniStrict"
+      minVersion: "VersionTLS12"
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+        - "TLS_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_RSA_WITH_AES_128_GCM_SHA256"
+
+    modern:
+      minVersion: "VersionTLS13"

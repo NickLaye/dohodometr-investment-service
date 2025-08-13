@@ -1,0 +1,120 @@
+# 🚀 DOHODOMETR.RU PRODUCTION ENVIRONMENT
+# Дата создания: 12 августа 2025
+# ВАЖНО: Смените пароли перед использованием в продакшене!
+
+# ==============================================
+# 🔐 БАЗОВАЯ БЕЗОПАСНОСТЬ
+# ==============================================
+
+# Основной домен
+DOMAIN=dohodometr.ru
+ENVIRONMENT=production
+
+# JWT и шифрование
+SECRET_KEY=DO_change_secret_key_production_2025_very_secure
+JWT_SECRET_KEY=DO_change_jwt_secret_key_production_2025_secure
+ENCRYPTION_KEY=DO_change_encryption_key_production_2025
+
+# ==============================================
+# 💾 БАЗЫ ДАННЫХ
+# ==============================================
+
+# PostgreSQL
+POSTGRES_DB=dohodometr
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=DO_change_strong_password_2025_production
+
+# Redis
+REDIS_PASSWORD=DO_change_redis_password_2025_secure
+
+# ==============================================
+# 📧 EMAIL НАСТРОЙКИ
+# ==============================================
+
+# Основные email адреса
+EMAIL_ADMIN=admin@dohodometr.ru
+EMAIL_SUPPORT=support@dohodometr.ru
+EMAIL_LEGAL=legal@dohodometr.ru
+EMAIL_PRIVACY=privacy@dohodometr.ru
+
+# SMTP для отправки уведомлений (Yandex Mail)
+SMTP_HOST=smtp.yandex.ru
+SMTP_PORT=587
+SMTP_USE_TLS=true
+SMTP_USERNAME=noreply@dohodometr.ru
+SMTP_PASSWORD=DO_change_email_password_here
+
+# ==============================================
+# 🔒 РОССИЙСКОЕ ЗАКОНОДАТЕЛЬСТВО
+# ==============================================
+
+# 152-ФЗ "О персональных данных"
+DATA_RETENTION_DAYS=2555
+STORE_DATA_IN_RF=true
+PDPN_OPERATOR_NOTIFIED=false
+
+# 115-ФЗ "Противодействие отмыванию денег"
+AML_MONITORING_ENABLED=true
+SUSPICIOUS_ACTIVITY_THRESHOLD=600000
+
+# 173-ФЗ "Валютное регулирование"
+CURRENCY_LAW_NOTIFICATIONS=true
+FOREIGN_ACCOUNT_MONITORING=true
+
+# Налоговые настройки РФ
+TAX_RESIDENT_DEFAULT=true
+NDFL_RATE=0.13
+IIS_SUPPORT_ENABLED=true
+LDV_CALCULATION_ENABLED=true
+
+# ==============================================
+# 📊 МОНИТОРИНГ И БЕЗОПАСНОСТЬ
+# ==============================================
+
+# Логирование
+LOG_LEVEL=INFO
+DEBUG=false
+
+# Rate Limiting
+RATE_LIMIT_PER_MINUTE=60
+RATE_LIMIT_BURST=10
+
+# Сроки хранения логов
+LOG_RETENTION_DAYS=90
+ACCESS_LOG_ENABLED=true
+
+# ==============================================
+# 🚀 ПРОИЗВОДИТЕЛЬНОСТЬ
+# ==============================================
+
+# Кеширование
+CACHE_TTL_SECONDS=3600
+REDIS_CACHE_DB=2
+
+# ==============================================
+# 🌐 СЕТЕВЫЕ НАСТРОЙКИ
+# ==============================================
+
+# Разрешенные хосты
+ALLOWED_HOSTS=dohodometr.ru,www.dohodometr.ru,185.23.35.41
+
+# CORS Origins
+CORS_ORIGINS=https://dohodometr.ru,https://www.dohodometr.ru
+
+# Trusted Hosts
+TRUSTED_HOSTS=dohodometr.ru,www.dohodometr.ru
+
+# ==============================================
+# 💡 ВАЖНЫЕ ПРИМЕЧАНИЯ
+# ==============================================
+
+# 1. Обязательно смените все пароли с префиксом "DO_change"!
+# 2. Создайте сложные пароли минимум 16 символов
+# 3. Регулярно ротируйте пароли (раз в 3 месяца)
+# 4. Не коммитьте этот файл в публичный репозиторий!
+# 5. Создайте бэкап в безопасном месте
+# 6. Скопируйте этот файл как .env перед использованием
+
+# Генерация случайных паролей:
+# openssl rand -base64 32
+# python3 -c "import secrets; print(secrets.token_urlsafe(32))"

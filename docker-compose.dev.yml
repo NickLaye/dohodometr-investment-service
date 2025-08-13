@@ -1,0 +1,189 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: investment-postgres-dev
+    environment:
+      POSTGRES_DB: investment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=ru_RU.UTF-8 --lc-ctype=ru_RU.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d investment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: investment-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./infra/redis/redis.conf:/etc/redis/redis.conf:ro
+    command: redis-server /etc/redis/redis.conf
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: investment-minio-dev
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Backend FastAPI (для разработки запускается отдельно)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: investment-backend-dev
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=password123
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
+      - DEBUG=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - backend_cache:/app/.cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - investment-network
+    profiles:
+      - backend  # Запускается только при необходимости
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: investment-celery-worker-dev
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=password123
+      - SECRET_KEY=dev-secret-key-change-in-production
+    command: celery -A app.tasks.celery worker --loglevel=info
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - investment-network
+    profiles:
+      - worker
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: investment-celery-beat-dev
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - SECRET_KEY=dev-secret-key-change-in-production
+    command: celery -A app.tasks.celery beat --loglevel=info
+    volumes:
+      - ./backend:/app
+      - celery_data:/app/celerybeat-schedule
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - investment-network
+    profiles:
+      - beat
+
+  # Frontend Next.js (для разработки запускается отдельно)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: investment-frontend-dev
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_cache:/app/.next
+      - /app/node_modules
+    networks:
+      - investment-network
+    profiles:
+      - frontend
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+  backend_cache:
+    driver: local
+  frontend_cache:
+    driver: local
+  celery_data:
+    driver: local
+
+networks:
+  investment-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
