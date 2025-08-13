@@ -1,0 +1,285 @@
+# 🛡️ Dohodometr Security Operations Makefile
+# Упрощенные команды для всех security операций
+
+.PHONY: help security-setup security-today security-week security-month audit monitoring secrets pen-test
+
+# Default target
+help: ## 📋 Показать все доступные команды
+	@echo "🛡️ Dohodometr Security Operations"
+	@echo "================================="
+	@echo
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo
+	@echo "🎯 Рекомендуемый порядок выполнения:"
+	@echo "  1. make security-today     # Критичные исправления"
+	@echo "  2. make security-week      # Security инфраструктура"
+	@echo "  3. make security-month     # Enterprise решения"
+
+# ===========================================
+# 🚨 КРИТИЧНО - СЕГОДНЯ
+# ===========================================
+
+security-today: generate-secrets ## 🚨 Выполнить все критичные security операции сегодня
+	@echo "🚨 Выполняем критичные security операции..."
+	@echo "⚠️  Убедитесь что у вас есть доступ к production серверу!"
+	@echo
+	@echo "📋 Что будет выполнено:"
+	@echo "  1. ✅ Секреты уже сгенерированы"
+	@echo "  2. 📤 Развертывание на production (требует ручной настройки)"
+	@echo "  3. 🔄 Перезапуск сервисов"
+	@echo "  4. 🧪 Тестирование аутентификации"
+	@echo
+	@read -p "Введите адрес production сервера (user@server): " SERVER; \
+	if [ -n "$$SERVER" ]; then \
+		echo "📤 Развертывание секретов на $$SERVER..."; \
+		./deployment/deploy_production_secrets.sh "$$SERVER" || echo "❌ Ошибка развертывания секретов"; \
+		echo "🔄 Перезапуск сервисов на $$SERVER..."; \
+		./deployment/restart_services.sh "$$SERVER" || echo "❌ Ошибка перезапуска сервисов"; \
+		echo "🧪 Тестирование аутентификации на $$SERVER..."; \
+		./deployment/test_auth.sh "$$SERVER" || echo "❌ Ошибка тестирования"; \
+		echo "✅ Критичные операции завершены!"; \
+	else \
+		echo "❌ Адрес сервера не указан. Выполните команды вручную:"; \
+		echo "  ./deployment/deploy_production_secrets.sh user@your-server"; \
+		echo "  ./deployment/restart_services.sh user@your-server"; \
+		echo "  ./deployment/test_auth.sh user@your-server"; \
+	fi
+
+generate-secrets: ## 🔐 Сгенерировать production секреты
+	@echo "🔐 Генерирую production секреты..."
+	@if [ ! -f .env.production ]; then \
+		./deployment/generate_secure_secrets.sh .env.production; \
+		echo "✅ Секреты сгенерированы: .env.production"; \
+		echo "🔒 Права файла: $$(stat -c '%a' .env.production)"; \
+	else \
+		echo "⚠️  Файл .env.production уже существует"; \
+		echo "🔒 Для перегенерации удалите файл: rm .env.production"; \
+	fi
+
+deploy-secrets: ## 📤 Развернуть секреты на production (требует SERVER=user@host)
+	@if [ -z "$(SERVER)" ]; then \
+		echo "❌ Укажите SERVER: make deploy-secrets SERVER=user@your-server"; \
+	else \
+		echo "📤 Развертывание секретов на $(SERVER)..."; \
+		./deployment/deploy_production_secrets.sh $(SERVER); \
+	fi
+
+restart-services: ## 🔄 Перезапустить сервисы (требует SERVER=user@host)
+	@if [ -z "$(SERVER)" ]; then \
+		echo "❌ Укажите SERVER: make restart-services SERVER=user@your-server"; \
+	else \
+		echo "🔄 Перезапуск сервисов на $(SERVER)..."; \
+		./deployment/restart_services.sh $(SERVER); \
+	fi
+
+test-auth: ## 🧪 Протестировать аутентификацию
+	@echo "🧪 Тестирование аутентификации..."
+	@read -p "Введите URL для тестирования [http://localhost:8000]: " URL; \
+	URL=$${URL:-http://localhost:8000}; \
+	./deployment/test_auth.sh "$$URL"
+
+# ===========================================
+# 📅 НА ЭТОЙ НЕДЕЛЕ  
+# ===========================================
+
+security-week: pen-test setup-monitoring training-materials ## 📅 Выполнить security задачи на неделю
+	@echo "✅ Security инфраструктура на неделю настроена!"
+	@echo
+	@echo "📋 Что выполнено:"
+	@echo "  ✅ Penetration testing запущен"
+	@echo "  ✅ Monitoring система настроена"  
+	@echo "  ✅ Материалы для обучения готовы"
+	@echo
+	@echo "📊 Доступ к дашбордам:"
+	@echo "  • Grafana: http://localhost:3001 (admin/admin123)"
+	@echo "  • Prometheus: http://localhost:9090"
+	@echo "  • Kibana: http://localhost:5601"
+
+pen-test: ## 🔍 Запустить penetration testing
+	@echo "🔍 Запуск penetration testing..."
+	@read -p "Введите URL для тестирования [http://localhost:8000]: " URL; \
+	URL=$${URL:-http://localhost:8000}; \
+	./security/penetration_testing.sh "$$URL"; \
+	echo "📊 Результаты в: security/pentest_reports/"
+
+setup-monitoring: ## 📊 Настроить security мониторинг
+	@echo "📊 Настройка security мониторинга..."
+	./security/setup_security_monitoring.sh
+	@echo "✅ Мониторинг настроен!"
+	@echo "🚀 Для развертывания: cd security/monitoring && ./deploy_monitoring.sh"
+
+training-materials: ## 👥 Показать материалы для обучения команды
+	@echo "👥 Материалы для обучения команды security:"
+	@echo "📚 Основной материал: security/team_training_materials.md"
+	@echo "⏱️  Время обучения: 2-4 часа (можно разбить на сессии)"
+	@echo "🎯 План:"
+	@echo "  • День 1: Security Mindset + Secure Coding (1.5ч)"
+	@echo "  • День 2: Authentication & Data Protection (1ч)"  
+	@echo "  • День 3: DevSecOps + Incident Response (1.5ч)"
+
+# ===========================================
+# 🗓️ В ТЕЧЕНИЕ МЕСЯЦА
+# ===========================================
+
+security-month: setup-secrets-management setup-rotation internal-audit ## 🗓️ Выполнить долгосрочные security задачи
+	@echo "✅ Долгосрочные security задачи настроены!"
+	@echo
+	@echo "📋 Что выполнено:"
+	@echo "  ✅ Enterprise secrets management настроен"
+	@echo "  ✅ Автоматическая ротация секретов"
+	@echo "  ✅ Внутренний security audit"
+
+setup-secrets-management: ## 🏛️ Настроить enterprise secrets management
+	@echo "🏛️ Настройка enterprise secrets management..."
+	./security/secrets_management_setup.sh
+	@echo "✅ Secrets management настроен!"
+	@echo "📖 Инструкции: security/secrets_management/DEPLOYMENT_GUIDE.md"
+	@echo "🎯 Выберите:"
+	@echo "  • AWS Secrets Manager (рекомендуется): cd security/secrets_management/aws/terraform && terraform apply"
+	@echo "  • HashiCorp Vault: cd security/secrets_management/vault && ./scripts/init_vault.sh"
+
+setup-rotation: ## 🔄 Настроить автоматическую ротацию секретов  
+	@echo "🔄 Настройка автоматической ротации секретов..."
+	@echo "📋 Создан скрипт: security/secrets_management/secret_rotation.py"
+	@echo "⏰ Добавьте в cron:"
+	@echo "   0 2 * * 0 python3 /opt/dohodometr/security/secrets_management/secret_rotation.py"
+
+internal-audit: ## 🔍 Запустить внутренний security audit
+	@echo "🔍 Запуск внутреннего security audit..."
+	@read -p "Введите URL для аудита [http://localhost:8000]: " URL; \
+	URL=$${URL:-http://localhost:8000}; \
+	cd security/internal_audit && ./run_full_audit.sh "$$URL"; \
+	echo "📊 Результаты в: security/internal_audit/reports/"
+
+# ===========================================
+# 🔧 УТИЛИТЫ И ПРОВЕРКИ
+# ===========================================
+
+check-security: ## ✅ Проверить текущий статус безопасности
+	@echo "✅ Проверка текущего статуса безопасности..."
+	@echo
+	@echo "📁 Файлы секретов:"
+	@ls -la .env.production 2>/dev/null && echo "  ✅ .env.production существует" || echo "  ❌ .env.production не найден"
+	@echo
+	@echo "🔧 Исполняемые скрипты:"
+	@ls -la deployment/*.sh security/*.sh 2>/dev/null | grep -E "^-rwx" | wc -l | xargs echo "  ✅ Исполняемых скриптов:"
+	@echo
+	@echo "🐳 Docker статус:"
+	@docker ps --format "table {{.Names}}\t{{.Status}}" 2>/dev/null | head -5 || echo "  ❌ Docker недоступен"
+	@echo
+	@echo "📊 Созданные security файлы:"
+	@find security/ -name "*.sh" -o -name "*.py" -o -name "*.md" 2>/dev/null | wc -l | xargs echo "  📄 Security файлов:"
+
+clean-reports: ## 🧹 Очистить старые отчеты
+	@echo "🧹 Очистка старых отчетов..."
+	@rm -rf security/pentest_reports/* || true
+	@rm -rf security/internal_audit/reports/* || true
+	@rm -rf security/monitoring/reports/* || true
+	@echo "✅ Отчеты очищены"
+
+validate-env: ## ✅ Проверить качество environment файлов
+	@echo "✅ Проверка качества environment файлов..."
+	@if [ -f .env.production ]; then \
+		echo "🔍 Анализ .env.production:"; \
+		echo "  📏 Размер файла: $$(wc -c < .env.production) байт"; \
+		echo "  🔐 Количество секретов: $$(grep -E '^[A-Z_]+=.{16,}' .env.production | wc -l)"; \
+		echo "  ⚠️  Слабые значения: $$(grep -E '(password|admin|secret|123)' .env.production | wc -l)"; \
+	else \
+		echo "❌ .env.production не найден"; \
+	fi
+
+# ===========================================  
+# 🚨 ЭКСТРЕННЫЕ ПРОЦЕДУРЫ
+# ===========================================
+
+emergency-lockdown: ## 🚨 Экстренная блокировка (revoke всех токенов)
+	@echo "🚨 ЭКСТРЕННАЯ БЛОКИРОВКА СИСТЕМЫ"
+	@echo "=================================="
+	@read -p "⚠️  Вы уверены? Это отзовет ВСЕ токены! (yes/no): " CONFIRM; \
+	if [ "$$CONFIRM" = "yes" ]; then \
+		echo "🚨 Выполняем экстренную блокировку..."; \
+		docker exec -it dohodometr-redis redis-cli FLUSHDB || echo "❌ Не удалось очистить Redis"; \
+		echo "✅ Все токены отозваны"; \
+		echo "📋 Следующие шаги:"; \
+		echo "  1. Проанализируйте логи на предмет инцидента"; \
+		echo "  2. Пользователи должны заново войти в систему"; \
+		echo "  3. Смените критичные секреты"; \
+	else \
+		echo "❌ Операция отменена"; \
+	fi
+
+backup-secrets: ## 💾 Создать backup текущих секретов
+	@echo "💾 Создание backup секретов..."
+	@BACKUP_DIR="backups/secrets_$$(date +%Y%m%d_%H%M%S)"; \
+	mkdir -p "$$BACKUP_DIR"; \
+	cp .env.production "$$BACKUP_DIR/" 2>/dev/null || echo "⚠️  .env.production не найден"; \
+	tar -czf "$$BACKUP_DIR.tar.gz" "$$BACKUP_DIR" && rm -rf "$$BACKUP_DIR"; \
+	echo "✅ Backup создан: $$BACKUP_DIR.tar.gz"
+
+# ===========================================
+# 📊 ОТЧЕТЫ И СТАТИСТИКА  
+# ===========================================
+
+security-status: ## 📊 Показать полный security статус
+	@echo "📊 DOHODOMETR SECURITY STATUS"
+	@echo "============================="
+	@echo
+	@$(MAKE) -s check-security
+	@echo
+	@echo "🎯 ВЫПОЛНЕННЫЕ ЗАДАЧИ:"
+	@[ -f .env.production ] && echo "  ✅ Production секреты сгенерированы" || echo "  ❌ Production секреты не сгенерированы"
+	@[ -d security/pentest_reports ] && echo "  ✅ Penetration testing настроен" || echo "  ❌ Penetration testing не настроен"
+	@[ -d security/monitoring ] && echo "  ✅ Security мониторинг настроен" || echo "  ❌ Security мониторинг не настроен"
+	@[ -f security/team_training_materials.md ] && echo "  ✅ Training материалы готовы" || echo "  ❌ Training материалы не готовы"
+	@[ -d security/secrets_management ] && echo "  ✅ Secrets management настроен" || echo "  ❌ Secrets management не настроен"
+	@[ -d security/internal_audit ] && echo "  ✅ Internal audit готов" || echo "  ❌ Internal audit не готов"
+
+logs: ## 📄 Показать security логи
+	@echo "📄 Security логи..."
+	@docker-compose logs --tail=50 backend | grep -i security || echo "Нет security логов в backend"
+	@docker-compose logs --tail=50 redis | grep -i auth || echo "Нет auth логов в Redis"
+
+# ===========================================
+# 🎓 ИНФОРМАЦИЯ И ПОМОЩЬ
+# ===========================================
+
+info: ## ℹ️ Показать информацию о security setup
+	@echo "ℹ️ DOHODOMETR SECURITY INFORMATION"
+	@echo "=================================="
+	@echo
+	@echo "📁 Структура security файлов:"
+	@find security/ -type f -name "*.sh" -o -name "*.py" -o -name "*.md" | sort
+	@echo
+	@echo "📋 Основные команды:"
+	@echo "  make security-today   # Критичные задачи"
+	@echo "  make security-week    # Еженедельные задачи"
+	@echo "  make security-month   # Ежемесячные задачи"
+	@echo
+	@echo "📖 Документация:"
+	@echo "  SECURITY_IMPLEMENTATION_GUIDE.md - Полный план внедрения"
+	@echo "  security/team_training_materials.md - Обучение команды"
+	@echo
+	@echo "🆘 Экстренные команды:"
+	@echo "  make emergency-lockdown  # Отозвать все токены"
+	@echo "  make backup-secrets      # Backup секретов"
+
+# ===========================================
+# 🔧 DEVELOPMENT UTILITIES
+# ===========================================
+
+dev-test: ## 🧪 Запустить тесты в dev окружении
+	@echo "🧪 Запуск dev тестов..."
+	./deployment/test_auth.sh http://localhost:8000
+
+dev-monitoring: ## 📊 Запустить monitoring для dev
+	@echo "📊 Запуск dev мониторинга..."
+	@cd security/monitoring && docker-compose -f docker-compose.monitoring.yml up -d
+	@echo "✅ Dev мониторинг запущен:"
+	@echo "  • Grafana: http://localhost:3001"
+	@echo "  • Prometheus: http://localhost:9090"
+
+dev-clean: ## 🧹 Очистить dev окружение
+	@echo "🧹 Очистка dev окружения..."
+	@cd security/monitoring && docker-compose -f docker-compose.monitoring.yml down -v || true
+	@docker system prune -f || true
+	@echo "✅ Dev окружение очищено"

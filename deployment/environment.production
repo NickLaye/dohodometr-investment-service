@@ -11,8 +11,11 @@ DOMAIN=dohodometr.ru
 ENVIRONMENT=production
 
 # JWT и шифрование
-SECRET_KEY=DO_change_secret_key_production_2025_very_secure
-JWT_SECRET_KEY=DO_change_jwt_secret_key_production_2025_secure
+# SECURITY WARNING: These are PLACEHOLDER values!
+# Generate secure secrets using: ./deployment/generate_secure_secrets.sh
+# NEVER use these default values in production!
+SECRET_KEY=PLACEHOLDER_GENERATE_SECURE_SECRET_32_CHARS_MIN
+JWT_SECRET_KEY=PLACEHOLDER_GENERATE_SECURE_JWT_SECRET_32_CHARS_MIN
 ENCRYPTION_KEY=DO_change_encryption_key_production_2025
 
 # ==============================================
