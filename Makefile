@@ -2,7 +2,7 @@
 # Usage: make <target>
 
 .DEFAULT_GOAL := help
-.PHONY: help dev-up dev-down test lint format migrate backup logs health-check clean install-deps security-scan
+.PHONY: help dev-up dev-down test lint format migrate backup logs health-check clean install-deps security-scan k6-smoke k6-baseline openapi
 
 # Colors for output
 BOLD := \033[1m
@@ -35,6 +35,10 @@ install-deps: ## Install development dependencies
 	@if command -v npm >/dev/null 2>&1; then \
 		cd frontend && npm install; \
 		echo "$(GREEN)✅ Frontend dependencies installed$(NC)"; \
+	fi
+	@if command -v npm >/dev/null 2>&1; then \
+		npm run prepare || true; \
+		echo "$(GREEN)✅ Husky prepared$(NC)"; \
 	fi
 	@echo "$(GREEN)✅ Development dependencies installed successfully!$(NC)"
 
@@ -101,6 +105,19 @@ test-frontend: ## Run frontend tests only
 test-e2e: ## Run end-to-end tests
 	@echo "$(BLUE)Running E2E tests...$(NC)"
 	@docker-compose -f docker-compose.dev.yml exec frontend npm run test:e2e
+
+##@ Performance
+
+k6-smoke: ## Run k6 smoke test (BASE_URL=http://localhost:8000)
+	@echo "$(BLUE)Running k6 smoke...$(NC)"
+	@k6 run k6/smoke.js
+
+k6-baseline: ## Run k6 baseline test (BASE_URL=http://localhost:8000)
+	@echo "$(BLUE)Running k6 baseline...$(NC)"
+	@k6 run k6/baseline.js
+
+openapi: ## Export OpenAPI schema to docs/openapi.json
+	@$(MAKE) -C backend openapi
 
 ##@ Code Quality
 
