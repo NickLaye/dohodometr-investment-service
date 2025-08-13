@@ -1,6 +1,6 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
-export function middleware(req: NextRequest) {
+export function middleware() {
   const res = NextResponse.next()
   // Security headers mirrored from backend
   res.headers.set('X-Content-Type-Options', 'nosniff')
