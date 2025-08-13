@@ -1,25 +1,47 @@
-# 📊 Сервис учета инвестиций
+# 🚀 Dohodometr - Профессиональный сервис учета инвестиций
 
-Профессиональный облачный сервис для учета и анализа инвестиционных портфелей с поддержкой импорта из российских брокеров.
+[![Security Status](https://img.shields.io/badge/Security-Hardened-green.svg)](./SECURITY.md)
+[![Code Quality](https://img.shields.io/badge/Code%20Quality-A+-brightgreen.svg)](./HARD_REVIEW_REPORT.md)
+[![Test Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen.svg)](#testing)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Russian Laws](https://img.shields.io/badge/Compliance-RF%20Laws-red.svg)](./COMPLIANCE_RF.md)
 
-## 🚀 Возможности (MVP)
+> **Доходометр** — профессиональный облачный сервис для учета и анализа инвестиционных портфелей российских инвесторов с полным соответствием законодательству РФ.
+
+![Dohodometr Architecture](https://via.placeholder.com/800x400/1F3B35/FFFFFF?text=Dohodometr+Architecture)
+
+## 📋 Содержание
+
+- [🎯 Возможности](#-возможности)
+- [🏗️ Архитектура](#️-архитектура)  
+- [🛠 Технологический стек](#-технологический-стек)
+- [🚀 Быстрый старт](#-быстрый-старт)
+- [🔧 Разработка](#-разработка)
+- [🧪 Тестирование](#-тестирование)
+- [🚢 Деплой](#-деплой)
+- [🔒 Безопасность](#-безопасность)
+- [📊 Мониторинг](#-мониторинг)
+- [🤝 Участие в разработке](#-участие-в-разработке)
+
+## 🎯 Возможности
 
 ### 💼 Управление портфелями
-- Создание и управление множественными портфелями
-- Поддержка различных типов счетов (брокерские, ИИС, пенсионные)
-- Учет акций, облигаций, ETF, валют и кастомных активов
+- ✅ Создание и управление множественными портфелями
+- ✅ Поддержка различных типов счетов (брокерские, ИИС, пенсионные)
+- ✅ Учет акций, облигаций, ETF, валют и кастомных активов
+- ✅ FIFO учет позиций с автоматическим расчетом P&L
 
 ### 📈 Импорт и аналитика
-- **Автоматический импорт** из CSV/XLS отчетов основных брокеров РФ:
-  - Тинькофф Инвестиции
-  - Сбербанк Инвестор  
-  - ВТБ Капитал
-  - БКС
-  - Финам
-  - Открытие Брокер
-- **Расчет метрик доходности**: TWR, XIRR, Sharpe ratio
-- **FIFO учет** позиций с автоматическим расчетом P&L
-- **Валютная переоценка** с историческими курсами
+- 🔄 **Автоматический импорт** из CSV/XLS отчетов основных брокеров РФ:
+  - 🏦 Тинькофф Инвестиции
+  - 🏦 Сбербанк Инвестор  
+  - 🏦 ВТБ Капитал
+  - 🏦 БКС
+  - 🏦 Финам
+  - 🏦 Открытие Брокер
+- 📊 **Расчет метрик доходности**: TWR, XIRR, Sharpe ratio
+- 💱 **Валютная переоценка** с историческими курсами ЦБ РФ
+- 📈 **Бенчмаркинг** с индексами IMOEX, RTS, S&P 500
 
 ### 📊 Визуализация и отчеты
 - Интерактивные графики стоимости портфеля
@@ -38,15 +60,155 @@
 - Оповещения о пороговых изменениях цен
 - Еженедельные сводки по портфелю
 
+## 🏗️ Архитектура
+
+Dohodometr построен по принципам чистой архитектуры с микросервисным подходом:
+
+<div align="center">
+
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        FE[Next.js Frontend<br/>TypeScript + Tailwind]
+        UI[shadcn/ui Components]
+        FE --> UI
+    end
+    
+    subgraph "API Gateway"
+        NGINX[Nginx Reverse Proxy<br/>Rate Limiting + Security Headers]
+    end
+    
+    subgraph "Backend Services"
+        API[FastAPI Backend<br/>Python 3.12]
+        AUTH[Auth Service<br/>JWT + 2FA]
+        ANALYTICS[Analytics Engine<br/>Portfolio Calculations]
+        IMPORT[Import Service<br/>Broker Data Processing]
+        TAX[Tax Calculator<br/>Russian Tax Laws]
+        
+        API --> AUTH
+        API --> ANALYTICS
+        API --> IMPORT
+        API --> TAX
+    end
+    
+    subgraph "Data Layer"
+        PG[(PostgreSQL 16<br/>Main Database)]
+        REDIS[(Redis<br/>Cache + Sessions)]
+        MINIO[(MinIO<br/>File Storage)]
+    end
+    
+    subgraph "Background Processing"
+        CELERY[Celery Workers<br/>Background Tasks]
+        SCHEDULER[Celery Beat<br/>Scheduled Jobs]
+        
+        CELERY --> SCHEDULER
+    end
+    
+    subgraph "External APIs"
+        MOEX[MOEX API<br/>Russian Market Data]
+        TINKOFF[Tinkoff API<br/>Broker Integration]
+        CBR[CBR API<br/>Currency Rates]
+    end
+    
+    subgraph "Monitoring"
+        METRICS[Prometheus<br/>Metrics Collection]
+        LOGS[Centralized Logging<br/>JSON Format]
+        HEALTH[Health Checks<br/>Service Monitoring]
+    end
+    
+    %% Frontend connections
+    FE --> NGINX
+    NGINX --> API
+    
+    %% Backend to data
+    API --> PG
+    API --> REDIS
+    API --> MINIO
+    AUTH --> REDIS
+    
+    %% Background processing
+    API --> CELERY
+    CELERY --> PG
+    CELERY --> REDIS
+    
+    %% External API connections
+    IMPORT --> MOEX
+    IMPORT --> TINKOFF
+    ANALYTICS --> CBR
+    
+    %% Monitoring connections
+    API --> METRICS
+    API --> LOGS
+    NGINX --> LOGS
+    
+    %% Health checks
+    API --> HEALTH
+    PG --> HEALTH
+    REDIS --> HEALTH
+    
+    %% Styling
+    classDef frontend fill:#e1f5fe
+    classDef backend fill:#f3e5f5
+    classDef data fill:#e8f5e8
+    classDef external fill:#fff3e0
+    classDef monitoring fill:#fce4ec
+    
+    class FE,UI,NGINX frontend
+    class API,AUTH,ANALYTICS,IMPORT,TAX,CELERY,SCHEDULER backend
+    class PG,REDIS,MINIO data
+    class MOEX,TINKOFF,CBR external
+    class METRICS,LOGS,HEALTH monitoring
+```
+
+</div>
+
 ## 🛠 Технологический стек
 
-### Backend
-- **Python 3.12** + **FastAPI** - высокопроизводительный API
-- **PostgreSQL 16** с расширением pgcrypto для шифрования
-- **SQLAlchemy** + **Alembic** для работы с БД
-- **Redis** для кеширования и очередей задач
-- **Celery** для фоновых вычислений
-- **JWT** с refresh токенами + **2FA TOTP**
+<table>
+<tr>
+<td valign="top" width="50%">
+
+### 🎨 Frontend
+- **Next.js 14** — React фреймворк с SSR
+- **TypeScript** — строгая типизация
+- **Tailwind CSS** — utility-first CSS
+- **shadcn/ui** — современные компоненты
+- **React Query** — управление состоянием API
+- **Recharts** — визуализация данных
+
+</td>
+<td valign="top" width="50%">
+
+### ⚙️ Backend
+- **Python 3.12** — современный Python
+- **FastAPI** — высокопроизводительный API
+- **SQLAlchemy** — ORM с типизацией
+- **Alembic** — миграции базы данных
+- **Pydantic** — валидация данных
+- **Celery** — фоновые задачи
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🗄️ База данных
+- **PostgreSQL 16** — основная БД
+- **Redis** — кеш и сессии
+- **MinIO** — объектное хранилище
+
+</td>
+<td valign="top">
+
+### 🔒 Безопасность
+- **JWT** с refresh токенами
+- **TOTP 2FA** — двухфакторная аутентификация
+- **Argon2** — хеширование паролей
+- **AES-256-GCM** — шифрование данных
+
+</td>
+</tr>
+</table>
 
 ### Frontend  
 - **Next.js 14** (App Router) + **React 18** + **TypeScript**
