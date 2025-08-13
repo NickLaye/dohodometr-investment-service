@@ -208,7 +208,7 @@ export const createMockResponse = <T,>(data: T, status = 200) => ({
   formData: () => Promise.resolve(new FormData()),
 });
 
-export const mockApiSuccess = <T>(data: T) => {
+export const mockApiSuccess = <T,>(data: T) => {
   (fetch as any).mockResolvedValueOnce(createMockResponse(data));
 };
 
