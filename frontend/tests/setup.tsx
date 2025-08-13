@@ -190,7 +190,7 @@ export const mockTransaction = {
 };
 
 // Test helper functions
-export const createMockResponse = <T>(data: T, status = 200) => ({
+export const createMockResponse = <T,>(data: T, status = 200) => ({
   ok: status >= 200 && status < 300,
   status,
   json: () => Promise.resolve(data),
