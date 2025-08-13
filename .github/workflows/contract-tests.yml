@@ -1,0 +1,62 @@
+name: Contract Tests (Schemathesis)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  schemathesis:
+    name: Schemathesis API Contract
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
+
+      - name: Setup Python
+        uses: actions/setup-python@5ccb29d8773c3f3f653e1705f474dfaa8a06a912
+        with:
+          python-version: '3.12'
+
+      - name: Install backend (dev) deps
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run schemathesis against ASGI app
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: test-secret
+          JWT_SECRET_KEY: test-jwt
+          ENVIRONMENT: testing
+        run: |
+          cd backend
+          schemathesis run --app app.main:app --base-url=http://testserver \
+            --checks all --hypothesis-deadline=200 --workers=2 --rate-limit=50 \
+            /openapi.json
+
