@@ -141,7 +141,8 @@ exclude = [
     "E501",   # long lines in verbose models/docstrings
     "UP007",  # typing union modernisation not required
     "RUF001", "RUF002", "RUF003",  # RU unicode in comments/docstrings
-    "ERA001"  # commented-out code toleration in models
+    "ERA001", # commented-out code toleration in models
+    "S105"    # constants/identifiers accidentally matching secret patterns
 ]
 
 [tool.ruff.isort]
