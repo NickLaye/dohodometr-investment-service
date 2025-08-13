@@ -1,0 +1,242 @@
+"""Эндпоинты для работы с портфелями."""
+
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
+
+from app.core.security import get_current_user
+from app.core.database import get_db
+from app.models.user import User
+from app.repositories.portfolio import PortfolioRepository
+from app.services.portfolio_analytics import PortfolioAnalyticsService
+
+router = APIRouter()
+
+
+class PortfolioCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    base_currency: str = "RUB"
+
+
+class PortfolioUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    base_currency: Optional[str] = None
+
+
+class PortfolioResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    base_currency: str
+    is_active: bool
+    total_value: Optional[float]
+    total_cost: Optional[float]
+    total_pnl: Optional[float]
+    total_pnl_percent: Optional[float]
+    created_at: str
+    updated_at: str
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/", response_model=List[PortfolioResponse])
+async def get_portfolios(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Получение списка портфелей пользователя."""
+    portfolio_repo = PortfolioRepository(db)
+    portfolios = await portfolio_repo.get_user_portfolios(current_user.id)
+    
+    return [
+        PortfolioResponse(
+            id=p.id,
+            name=p.name,
+            description=p.description,
+            base_currency=p.base_currency,
+            is_active=p.is_active,
+            total_value=float(p.total_value) if p.total_value else None,
+            total_cost=float(p.total_cost) if p.total_cost else None,
+            total_pnl=float(p.total_pnl) if p.total_pnl else None,
+            total_pnl_percent=float(p.total_pnl_percent) if p.total_pnl_percent else None,
+            created_at=p.created_at.isoformat(),
+            updated_at=p.updated_at.isoformat()
+        )
+        for p in portfolios
+    ]
+
+
+@router.post("/", response_model=PortfolioResponse, status_code=status.HTTP_201_CREATED)
+async def create_portfolio(
+    portfolio_data: PortfolioCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Создание нового портфеля."""
+    portfolio_repo = PortfolioRepository(db)
+    
+    portfolio = await portfolio_repo.create(
+        owner_id=current_user.id,
+        name=portfolio_data.name,
+        description=portfolio_data.description,
+        base_currency=portfolio_data.base_currency
+    )
+    
+    return PortfolioResponse(
+        id=portfolio.id,
+        name=portfolio.name,
+        description=portfolio.description,
+        base_currency=portfolio.base_currency,
+        is_active=portfolio.is_active,
+        total_value=float(portfolio.total_value) if portfolio.total_value else None,
+        total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
+        total_pnl=float(portfolio.total_pnl) if portfolio.total_pnl else None,
+        total_pnl_percent=float(portfolio.total_pnl_percent) if portfolio.total_pnl_percent else None,
+        created_at=portfolio.created_at.isoformat(),
+        updated_at=portfolio.updated_at.isoformat()
+    )
+
+
+@router.get("/{portfolio_id}")
+async def get_portfolio(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Получение портфеля по ID."""
+    portfolio_repo = PortfolioRepository(db)
+    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    
+    if not portfolio:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Портфель не найден"
+        )
+    
+    if portfolio.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Нет доступа к этому портфелю"
+        )
+    
+    return PortfolioResponse(
+        id=portfolio.id,
+        name=portfolio.name,
+        description=portfolio.description,
+        base_currency=portfolio.base_currency,
+        is_active=portfolio.is_active,
+        total_value=float(portfolio.total_value) if portfolio.total_value else None,
+        total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
+        total_pnl=float(portfolio.total_pnl) if portfolio.total_pnl else None,
+        total_pnl_percent=float(portfolio.total_pnl_percent) if portfolio.total_pnl_percent else None,
+        created_at=portfolio.created_at.isoformat(),
+        updated_at=portfolio.updated_at.isoformat()
+    )
+
+
+@router.put("/{portfolio_id}")
+async def update_portfolio(
+    portfolio_id: int,
+    portfolio_data: PortfolioUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Обновление портфеля."""
+    portfolio_repo = PortfolioRepository(db)
+    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    
+    if not portfolio:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Портфель не найден"
+        )
+    
+    if portfolio.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Нет доступа к этому портфелю"
+        )
+    
+    # Обновляем только заданные поля
+    update_data = portfolio_data.dict(exclude_unset=True)
+    portfolio = await portfolio_repo.update(portfolio_id, **update_data)
+    
+    return PortfolioResponse(
+        id=portfolio.id,
+        name=portfolio.name,
+        description=portfolio.description,
+        base_currency=portfolio.base_currency,
+        is_active=portfolio.is_active,
+        total_value=float(portfolio.total_value) if portfolio.total_value else None,
+        total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
+        total_pnl=float(portfolio.total_pnl) if portfolio.total_pnl else None,
+        total_pnl_percent=float(portfolio.total_pnl_percent) if portfolio.total_pnl_percent else None,
+        created_at=portfolio.created_at.isoformat(),
+        updated_at=portfolio.updated_at.isoformat()
+    )
+
+
+@router.delete("/{portfolio_id}")
+async def delete_portfolio(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Мягкое удаление портфеля."""
+    portfolio_repo = PortfolioRepository(db)
+    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    
+    if not portfolio:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Портфель не найден"
+        )
+    
+    if portfolio.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Нет доступа к этому портфелю"
+        )
+    
+    success = await portfolio_repo.delete(portfolio_id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Ошибка удаления портфеля"
+        )
+    
+    return {"message": "Портфель успешно удален"}
+
+
+@router.get("/{portfolio_id}/summary")
+async def get_portfolio_summary(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Получение детальной сводки по портфелю."""
+    portfolio_repo = PortfolioRepository(db)
+    
+    # Проверяем доступ
+    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    if not portfolio:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Портфель не найден"
+        )
+    
+    if portfolio.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Нет доступа к этому портфелю"
+        )
+    
+    # Получаем детальную сводку
+    summary = await portfolio_repo.get_portfolio_summary(portfolio_id)
+    
+    return summary
