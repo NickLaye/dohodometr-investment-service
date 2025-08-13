@@ -1,303 +1,149 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, TrendingUp, TrendingDown, DollarSign, Target, Calendar, PieChart, BarChart3, Briefcase, AlertTriangle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { StatCard } from '@/components/financial/stat-card'
-import { PnLIndicator } from '@/components/financial/pnl-indicator'
-import { PortfolioCard } from '@/components/financial/portfolio-card'
-import { Badge } from '@/components/ui/badge'
-import { useQuery } from '@tanstack/react-query'
+import React from 'react'
 
-// Mock data - в реальном приложении это будет API
-const mockPortfolios = [
-  {
-    id: 1,
-    name: 'Основной портфель',
-    description: 'Долгосрочные инвестиции в акции и облигации',
-    totalValue: 2450000,
-    dailyChange: 15240,
-    dailyChangePercent: 0.8,
-    assetsCount: 24,
-    isActive: true
-  },
-  {
-    id: 2,
-    name: 'Спекулятивный',
-    description: 'Краткосрочная торговля и высокорисковые активы',
-    totalValue: 850000,
-    dailyChange: -8500,
-    dailyChangePercent: -1.2,
-    assetsCount: 15,
-    isActive: true
-  },
-  {
-    id: 3,
-    name: 'ИИС',
-    description: 'Индивидуальный инвестиционный счет',
-    totalValue: 400000,
-    dailyChange: 2400,
-    dailyChangePercent: 0.6,
-    assetsCount: 8,
-    isActive: true
-  }
-]
-
-const mockStats = {
-  totalValue: 3700000,
-  dailyChange: 9140,
-  dailyChangePercent: 0.25,
-  weeklyChange: 45200,
-  weeklyChangePercent: 1.24,
-  monthlyChange: -125000,
-  monthlyChangePercent: -3.27,
-  portfoliosCount: 3,
-  activePositions: 47,
-  pendingTransactions: 3
-}
-
-const mockTopPerformers = [
-  { symbol: 'SBER', name: 'Сбербанк', change: 12.5, changePercent: 4.2 },
-  { symbol: 'GAZP', name: 'Газпром', change: 8.9, changePercent: 3.1 },
-  { symbol: 'YNDX', name: 'Яндекс', change: 245.0, changePercent: 2.8 }
-]
-
-const mockTopLosers = [
-  { symbol: 'MAIL', name: 'VK Group', change: -45.2, changePercent: -5.1 },
-  { symbol: 'OZON', name: 'Ozon', change: -125.8, changePercent: -4.3 },
-  { symbol: 'FIXP', name: 'Fix Price', change: -32.1, changePercent: -3.7 }
-]
-
-export default function OverviewPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day')
-
-  // Mock loading state
-  const [isLoading, setIsLoading] = useState(true)
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000)
-    return () => clearTimeout(timer)
-  }, [])
-
-  const getPeriodData = () => {
-    switch (selectedPeriod) {
-      case 'week':
-        return { change: mockStats.weeklyChange, changePercent: mockStats.weeklyChangePercent }
-      case 'month':
-        return { change: mockStats.monthlyChange, changePercent: mockStats.monthlyChangePercent }
-      default:
-        return { change: mockStats.dailyChange, changePercent: mockStats.dailyChangePercent }
-    }
-  }
-
-  const periodData = getPeriodData()
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner />
-      </div>
-    )
-  }
-
+export default function AppDashboard() {
   return (
-    <div className="space-y-6 p-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Обзор портфелей</h1>
-          <p className="text-muted-foreground">
-            Общая информация о ваших инвестициях и производительности
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button size="sm" variant="outline">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Аналитика
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Новый портфель
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Обзор портфеля</h1>
+        <p className="text-gray-600">
+          Добро пожаловать в ваш личный кабинет Доходометр
+        </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Общая стоимость"
-          value={mockStats.totalValue}
-          currency="₽"
-          icon={DollarSign}
-          iconColor="text-green-600"
-          trend="up"
-          description="Все портфели"
-        />
-        
-        <StatCard
-          title="Изменение"
-          value={Math.abs(periodData.change)}
-          changePercent={periodData.changePercent}
-          currency="₽"
-          icon={periodData.change >= 0 ? TrendingUp : TrendingDown}
-          iconColor={periodData.change >= 0 ? "text-green-600" : "text-red-600"}
-          trend={periodData.change >= 0 ? "up" : "down"}
-          description={`За ${selectedPeriod === 'day' ? 'сегодня' : selectedPeriod === 'week' ? 'неделю' : 'месяц'}`}
-        />
-        
-        <StatCard
-          title="Портфели"
-          value={mockStats.portfoliosCount}
-          icon={Briefcase}
-          iconColor="text-blue-600"
-          description={`${mockStats.activePositions} активных позиций`}
-        />
-        
-        <StatCard
-          title="Ожидают"
-          value={mockStats.pendingTransactions}
-          icon={Calendar}
-          iconColor="text-amber-600"
-          description="Отложенные операции"
-        />
-      </div>
-
-      {/* Period Selector */}
-      <div className="flex items-center space-x-2">
-        <span className="text-sm font-medium">Период:</span>
-        <Tabs value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as any)}>
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="day">День</TabsTrigger>
-            <TabsTrigger value="week">Неделя</TabsTrigger>
-            <TabsTrigger value="month">Месяц</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Portfolios */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Мои портфели</h2>
-            <Button variant="outline" size="sm">
-              Управление
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {mockPortfolios.map((portfolio) => (
-              <PortfolioCard key={portfolio.id} {...portfolio} />
-            ))}
+      {/* Статистические карточки */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+            </div>
+            <div className="ml-5 w-0 flex-1">
+              <dl>
+                <dt className="text-sm font-medium text-gray-500 truncate">
+                  Общая стоимость
+                </dt>
+                <dd className="text-lg font-medium text-gray-900">
+                  ₽1,245,780
+                </dd>
+              </dl>
+            </div>
           </div>
         </div>
 
-        {/* Sidebar with performance data */}
-        <div className="space-y-6">
-          {/* Top Performers */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
-                Лидеры роста
-              </CardTitle>
-              <CardDescription>
-                Лучшие активы за сегодня
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {mockTopPerformers.map((item) => (
-                <div key={item.symbol} className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{item.symbol}</div>
-                    <div className="text-sm text-muted-foreground">{item.name}</div>
-                  </div>
-                  <PnLIndicator 
-                    value={item.change}
-                    percentage={item.changePercent}
-                    size="sm"
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                </svg>
+              </div>
+            </div>
+            <div className="ml-5 w-0 flex-1">
+              <dl>
+                <dt className="text-sm font-medium text-gray-500 truncate">
+                  Доходность
+                </dt>
+                <dd className="text-lg font-medium text-gray-900">
+                  +12.4%
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
 
-          {/* Top Losers */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center">
-                <TrendingDown className="h-5 w-5 mr-2 text-red-600" />
-                Лидеры падения
-              </CardTitle>
-              <CardDescription>
-                Худшие активы за сегодня
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {mockTopLosers.map((item) => (
-                <div key={item.symbol} className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{item.symbol}</div>
-                    <div className="text-sm text-muted-foreground">{item.name}</div>
-                  </div>
-                  <PnLIndicator 
-                    value={item.change}
-                    percentage={item.changePercent}
-                    size="sm"
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M21 18V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H19C20.1 3 21 3.9 21 5V18M12 7C9.24 7 7 9.24 7 12S9.24 17 12 17 17 14.76 17 12 14.76 7 12 7M12 9C13.66 9 15 10.34 15 12S13.66 15 12 15 9 13.66 9 12 10.34 9 12 9Z"/>
+                </svg>
+              </div>
+            </div>
+            <div className="ml-5 w-0 flex-1">
+              <dl>
+                <dt className="text-sm font-medium text-gray-500 truncate">
+                  Дивиденды
+                </dt>
+                <dd className="text-lg font-medium text-gray-900">
+                  ₽24,560
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Быстрые действия</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start">
-                <Plus className="h-4 w-4 mr-2" />
-                Добавить транзакцию
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <PieChart className="h-4 w-4 mr-2" />
-                Ребалансировка
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Target className="h-4 w-4 mr-2" />
-                Налоговый расчет
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z"/>
+                </svg>
+              </div>
+            </div>
+            <div className="ml-5 w-0 flex-1">
+              <dl>
+                <dt className="text-sm font-medium text-gray-500 truncate">
+                  Риск
+                </dt>
+                <dd className="text-lg font-medium text-gray-900">
+                  Средний
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {/* Alerts */}
-          <Card className="border-amber-200 dark:border-amber-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center text-amber-700 dark:text-amber-400">
-                <AlertTriangle className="h-5 w-5 mr-2" />
-                Уведомления
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Дивиденды SBER</span>
-                  <Badge variant="info">Сегодня</Badge>
+      {/* График портфеля */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-4">
+          Динамика портфеля
+        </h2>
+        <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+          <p className="text-gray-500">График портфеля будет здесь</p>
+        </div>
+      </div>
+
+      {/* Последние транзакции */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-4">
+          Последние транзакции
+        </h2>
+        <div className="space-y-3">
+          {[
+            { type: 'buy', asset: 'SBER', amount: '+100 шт.', date: '2024-08-13', price: '₽25,500' },
+            { type: 'sell', asset: 'GAZP', amount: '-50 шт.', date: '2024-08-12', price: '₹18,750' },
+            { type: 'dividend', asset: 'LKOH', amount: 'Дивиденды', date: '2024-08-11', price: '₽2,340' },
+          ].map((transaction, index) => (
+            <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  transaction.type === 'buy' ? 'bg-green-100 text-green-600' :
+                  transaction.type === 'sell' ? 'bg-red-100 text-red-600' :
+                  'bg-blue-100 text-blue-600'
+                }`}>
+                  {transaction.type === 'buy' ? '+' : transaction.type === 'sell' ? '-' : '₽'}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Экспирация опциона</span>
-                  <Badge variant="warning">3 дня</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Налоговая декларация</span>
-                  <Badge variant="destructive">Просрочено</Badge>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900">{transaction.asset}</p>
+                  <p className="text-sm text-gray-500">{transaction.amount}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">{transaction.price}</p>
+                <p className="text-sm text-gray-500">{transaction.date}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

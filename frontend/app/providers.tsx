@@ -2,9 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { AuthProvider } from '@/lib/auth/auth-context'
 import { ThemeProvider } from 'next-themes'
 import { useState } from 'react'
-import { AuthProvider } from '@/lib/auth/auth-context'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(

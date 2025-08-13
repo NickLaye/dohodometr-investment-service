@@ -69,7 +69,7 @@ export default function LoginPage() {
     setErrors({})
 
     try {
-      await login(email, password, totpCode || undefined, rememberMe)
+      await login(email, password)
       // Успешный вход - перенаправление произойдет автоматически
     } catch (error: any) {
       // Проверяем, требуется ли 2FA

@@ -7,8 +7,8 @@ import { Toaster } from '@/components/ui/toaster'
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
-  title: 'Сервис учета инвестиций',
-  description: 'Профессиональный сервис для учета и анализа инвестиционных портфелей',
+  title: 'Доходометр - Финансовый сервис',
+  description: 'Управляйте финансами с умом. Доходометр — современный инструмент для анализа и планирования личных финансов.',
   keywords: [
     'инвестиции',
     'портфель',

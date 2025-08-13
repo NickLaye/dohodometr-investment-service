@@ -1,62 +1,76 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 
 interface User {
-  id: number
+  id: string
   email: string
-  first_name?: string
-  last_name?: string
-  is_2fa_enabled?: boolean
+  name: string
 }
 
 interface AuthContextType {
   user: User | null
-  isAuthenticated: boolean
-  login: (email: string, password: string, totpCode?: string, rememberMe?: boolean) => Promise<void>
-  logout: () => Promise<void>
+  login: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, name: string) => Promise<void>
+  logout: () => void
   isLoading: boolean
+  isAuthenticated: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Mock user for demo
-    setUser({
-      id: 1,
-      email: 'demo@dohodometr.ru',
-      first_name: 'Demo',
-      last_name: 'User'
-    })
-    setIsLoading(false)
+    // Проверка существующей сессии
+    checkAuth()
   }, [])
 
-  const login = async (email: string, password: string, totpCode?: string, rememberMe?: boolean) => {
-    // Mock login
-    setUser({
-      id: 1,
-      email,
-      first_name: 'Demo',
-      last_name: 'User'
-    })
+  const checkAuth = async () => {
+    try {
+      // Здесь будет логика проверки токена
+      setIsLoading(false)
+    } catch (error) {
+      setUser(null)
+      setIsLoading(false)
+    }
   }
 
-  const logout = async () => {
+  const login = async (email: string, password: string) => {
+    setIsLoading(true)
+    try {
+      // Здесь будет логика авторизации
+      const userData = { id: '1', email, name: 'User' }
+      setUser(userData)
+    } catch (error) {
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const register = async (email: string, password: string, name: string) => {
+    setIsLoading(true)
+    try {
+      // Здесь будет логика регистрации
+      const userData = { id: '1', email, name }
+      setUser(userData)
+    } catch (error) {
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const logout = () => {
     setUser(null)
+    // Очистка токенов
   }
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      login,
-      logout,
-      isLoading
-    }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )

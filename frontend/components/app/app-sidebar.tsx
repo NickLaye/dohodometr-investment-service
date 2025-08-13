@@ -1,297 +1,88 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  BarChart3,
-  Briefcase,
-  Calendar,
-  FileText,
-  Home,
-  PieChart,
-  Settings,
-  Target,
-  TrendingUp,
-  Upload,
-  Wallet,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
-const navigation = [
+const navigationItems = [
   {
-    name: 'Обзор',
     href: '/app',
-    icon: Home,
-    description: 'Общий обзор портфелей'
+    label: 'Обзор',
+    icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+      </svg>
+    )
   },
   {
-    name: 'Портфели',
-    href: '/app/portfolios',
-    icon: Briefcase,
-    description: 'Управление портфелями'
+    href: '/app/portfolio',
+    label: 'Портфель',
+    icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    )
   },
   {
-    name: 'Транзакции',
     href: '/app/transactions',
-    icon: Wallet,
-    description: 'История операций'
+    label: 'Транзакции',
+    icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M7 4V2C7 1.45 7.45 1 8 1S9 1.45 9 2V4H15V2C15 1.45 15.45 1 16 1S17 1.45 17 2V4H20C21.1 4 22 4.9 22 6V20C22 21.1 21.1 22 20 22H4C2.9 22 2 21.1 2 20V6C2 4.9 2.9 4 4 4H7M4 8H20V20H4V8Z"/>
+      </svg>
+    )
   },
   {
-    name: 'Аналитика',
     href: '/app/analytics',
-    icon: BarChart3,
-    description: 'Анализ производительности',
-    children: [
-      {
-        name: 'Производительность',
-        href: '/app/analytics/performance',
-        icon: TrendingUp,
-      },
-      {
-        name: 'Распределение',
-        href: '/app/analytics/allocation',
-        icon: PieChart,
-      },
-      {
-        name: 'Риск-анализ',
-        href: '/app/analytics/risk',
-        icon: Target,
-      },
-    ],
-  },
-  {
-    name: 'Налоги',
-    href: '/app/taxes',
-    icon: FileText,
-    description: 'Расчет налогов РФ'
-  },
-  {
-    name: 'Планирование',
-    href: '/app/planning',
-    icon: Calendar,
-    description: 'Цели и планы'
-  },
-  {
-    name: 'Импорт',
-    href: '/app/import',
-    icon: Upload,
-    description: 'Импорт от брокеров'
-  },
-]
-
-const bottomNavigation = [
-  {
-    name: 'Настройки',
-    href: '/app/settings',
-    icon: Settings,
-    description: 'Персональные настройки'
-  },
-]
-
-interface NavItemProps {
-  item: {
-    name: string
-    href: string
-    icon: any
-    description?: string
-    children?: {
-      name: string
-      href: string
-      icon: any
-    }[]
-  }
-  isCollapsed: boolean
-  isActive: boolean
-}
-
-function NavItem({ item, isCollapsed, isActive }: NavItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const pathname = usePathname()
-
-  const hasChildren = item.children && item.children.length > 0
-  const isChildActive = hasChildren && item.children.some(child => pathname === child.href)
-
-  const navContent = (
-    <div className="space-y-1">
-      {hasChildren && !isCollapsed ? (
-        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className={cn(
-                'w-full justify-start space-x-3 px-3 py-2 h-auto font-medium transition-colors',
-                isActive || isChildActive
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-              aria-expanded={isExpanded}
-              aria-label={`${item.name}${hasChildren ? ', развернуть подменю' : ''}`}
-            >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              <span className="flex-1 text-left">{item.name}</span>
-              <ChevronRight
-                className={cn(
-                  'h-4 w-4 transition-transform',
-                  isExpanded && 'rotate-90'
-                )}
-              />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="ml-6 space-y-1 mt-1">
-            {item.children!.map((child) => (
-              <Link
-                key={child.name}
-                href={child.href}
-                className={cn(
-                  'flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                  pathname === child.href
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                )}
-                aria-label={child.name}
-              >
-                <child.icon className="h-4 w-4 flex-shrink-0" />
-                <span>{child.name}</span>
-              </Link>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
-      ) : (
-        <Link
-          href={item.href}
-          className={cn(
-            'flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-            isActive || isChildActive
-              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent',
-            isCollapsed && 'justify-center'
-          )}
-          aria-label={isCollapsed ? `${item.name}${item.description ? ': ' + item.description : ''}` : item.name}
-        >
-          <item.icon className="h-4 w-4 flex-shrink-0" />
-          {!isCollapsed && <span className="flex-1">{item.name}</span>}
-        </Link>
-      )}
-    </div>
-  )
-
-  // Wrap with tooltip when collapsed
-  if (isCollapsed) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {navContent}
-        </TooltipTrigger>
-        <TooltipContent side="right" className="font-medium">
-          <div>
-            <div>{item.name}</div>
-            {item.description && (
-              <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
+    label: 'Аналитика',
+    icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M22 21H2V3H4V19H6V17H10V19H12V16H16V19H18V18H22V21M16 8H18V15H16V8M12 2H14V15H12V2M8 9H10V15H8V9M4 12H6V15H4V12Z"/>
+      </svg>
     )
   }
-
-  return navContent
-}
+]
 
 export function AppSidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
 
   return (
-    <TooltipProvider>
-      <div
-        className={cn(
-          'relative hidden md:flex flex-col bg-background border-r border-border transition-all duration-300',
-          isCollapsed ? 'w-16' : 'w-64'
-        )}
-      >
-        {/* Логотип и заголовок */}
-        <div className="flex h-16 items-center border-b border-border px-4">
-          {!isCollapsed ? (
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-lg">Dohodometr</span>
-            </div>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mx-auto cursor-default">
-                  <TrendingUp className="h-4 w-4 text-primary-foreground" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <div className="font-medium">Dohodometr</div>
-                <div className="text-xs text-muted-foreground">Сервис учета инвестиций</div>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-
-        {/* Основная навигация */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2">
-          <div className="space-y-1">
-            {navigation.map((item) => (
-              <NavItem
-                key={item.name}
-                item={item}
-                isCollapsed={isCollapsed}
-                isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
-              />
-            ))}
+    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      {/* Логотип */}
+      <div className="p-6">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M3 3v18h18V3H3zm16 16H5V5h14v14z"/>
+              <path d="M7 12l2 2 4-4 4 4V9l-4-4-4 4-2-2z"/>
+            </svg>
           </div>
-        </nav>
-
-        {/* Нижняя навигация */}
-        <div className="border-t border-border py-4 px-2">
-          <div className="space-y-1">
-            {bottomNavigation.map((item) => (
-              <NavItem
-                key={item.name}
-                item={item}
-                isCollapsed={isCollapsed}
-                isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Кнопка сворачивания */}
-        <div className="absolute -right-3 top-20 z-20">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-6 w-6 rounded-full bg-background shadow-md border-border"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                aria-label={isCollapsed ? 'Развернуть сайдбар' : 'Свернуть сайдбар'}
-              >
-                {isCollapsed ? (
-                  <ChevronRight className="h-3 w-3" />
-                ) : (
-                  <ChevronLeft className="h-3 w-3" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              {isCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
-            </TooltipContent>
-          </Tooltip>
-        </div>
+          <span className="text-xl font-bold text-primary font-accent">Доходометр</span>
+        </Link>
       </div>
-    </TooltipProvider>
+
+      {/* Навигация */}
+      <nav className="flex-1 px-4">
+        <ul className="space-y-2">
+          {navigationItems.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  pathname === item.href
+                    ? "bg-primary text-white"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                )}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
   )
 }

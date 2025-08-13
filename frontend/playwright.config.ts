@@ -95,8 +95,5 @@ export default defineConfig({
   expect: {
     /* Maximum time expect() should wait for the condition to be met. */
     timeout: 5000,
-    
-    /* Threshold for pixel difference in visual comparisons */
-    threshold: 0.3,
   },
 });

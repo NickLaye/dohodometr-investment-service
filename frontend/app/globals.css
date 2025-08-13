@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Дизайн-система Доходометр */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&display=swap');
+
+:root {
+  /* Основные цвета дизайн-системы */
+  --primary: #1F3B35;          /* Глубоко-изумрудный */
+  --accent-1: #C79A63;         /* Медно-песочный */
+  --accent-2: #63B8A7;         /* Свежий мятный */
+  --neutral-light: #F8F9F8;    /* Нейтральный светлый */
+  --neutral-dark: #2C2E2D;     /* Нейтральный тёмный */
+  
+  /* Дополнительные переменные */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --transition: all 0.3s ease;
+  
+  /* Фоновая сетка */
+  --grid-color: rgba(31, 59, 53, 0.05);
+}
+
+.dark {
+  --primary: #F8F9F8;
+  --accent-1: #E0B078;
+  --accent-2: #7ECFBE;
+  --neutral-light: #1A1C1B;
+  --neutral-dark: #F8F9F8;
+  --grid-color: rgba(99, 184, 167, 0.1);
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -73,278 +103,56 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Manrope', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Roboto Serif', serif;
   }
 }
 
 @layer components {
-  /* Кастомные компоненты */
-  .gradient-bg {
-    @apply bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800;
+  .font-accent {
+    font-family: 'Roboto Serif', serif;
   }
   
-  .glass-effect {
-    @apply backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border border-gray-200/50 dark:border-gray-700/50;
+  .text-primary {
+    color: var(--primary);
   }
   
-  .success-gradient {
-    @apply bg-gradient-to-r from-green-500 to-emerald-500;
+  .text-accent-1 {
+    color: var(--accent-1);
   }
   
-  .danger-gradient {
-    @apply bg-gradient-to-r from-red-500 to-pink-500;
+  .text-accent-2 {
+    color: var(--accent-2);
   }
   
-  .warning-gradient {
-    @apply bg-gradient-to-r from-yellow-500 to-orange-500;
+  .text-neutral-light {
+    color: var(--neutral-light);
   }
   
-  .info-gradient {
-    @apply bg-gradient-to-r from-blue-500 to-cyan-500;
-  }
-
-  /* Финансовые компоненты */
-  .profit-text {
-    @apply text-green-700 dark:text-green-400 font-medium;
+  .text-neutral-dark {
+    color: var(--neutral-dark);
   }
   
-  .loss-text {
-    @apply text-red-700 dark:text-red-400 font-medium;
+  .bg-primary {
+    background-color: var(--primary);
   }
   
-  .neutral-text {
-    @apply text-gray-600 dark:text-gray-400;
-  }
-
-  /* Улучшенные интерактивные элементы */
-  .interactive-card {
-    @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer;
+  .bg-accent-1 {
+    background-color: var(--accent-1);
   }
   
-  .button-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all duration-150;
+  .bg-accent-2 {
+    background-color: var(--accent-2);
   }
   
-  .input-enhanced {
-    @apply transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary;
-  }
-
-  /* Статусные индикаторы */
-  .status-success {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800;
+  .bg-neutral-light {
+    background-color: var(--neutral-light);
   }
   
-  .status-warning {
-    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800;
-  }
-  
-  .status-error {
-    @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800;
-  }
-  
-  .status-info {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800;
-  }
-}
-
-@layer utilities {
-  /* Кастомные утилиты */
-  .text-balance {
-    text-wrap: balance;
-  }
-  
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  
-  .shadow-glow {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
-  }
-
-  /* Финансовые утилиты */
-  .font-financial {
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.025em;
-  }
-  
-  .highlight-change {
-    animation: highlight 1s ease-out;
-  }
-  
-  /* Улучшенная типографика */
-  .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary)) 60%, hsl(var(--muted-foreground)));
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  /* Улучшенные фокус-состояния */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-background;
-  }
-  
-  /* Адаптивные отступы */
-  .container-padding {
-    @apply px-4 sm:px-6 lg:px-8;
-  }
-  
-  .section-spacing {
-    @apply py-8 sm:py-12 lg:py-16;
-  }
-}
-
-/* Переопределения для recharts */
-.recharts-cartesian-axis-tick-value {
-  @apply fill-muted-foreground text-xs;
-}
-
-.recharts-legend-wrapper {
-  @apply text-sm text-muted-foreground;
-}
-
-.recharts-tooltip-wrapper {
-  @apply rounded-lg border bg-popover p-2 shadow-md;
-}
-
-/* Кастомизация скроллбара */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-border rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-border/80;
-}
-
-/* Анимации для страниц */
-@keyframes slideInFromBottom {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes highlight {
-  from {
-    background-color: hsl(var(--primary) / 0.2);
-  }
-  to {
-    background-color: transparent;
-  }
-}
-
-@keyframes bounce-subtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-}
-
-.page-enter {
-  animation: slideInFromBottom 0.3s ease-out;
-}
-
-.bounce-subtle {
-  animation: bounce-subtle 0.5s ease-in-out;
-}
-
-/* Стили для форм */
-.form-field-error {
-  @apply text-destructive text-sm mt-1 animate-in slide-in-from-top-1 duration-200;
-}
-
-.form-field-success {
-  @apply text-green-600 dark:text-green-400 text-sm mt-1 animate-in slide-in-from-top-1 duration-200;
-}
-
-.form-field-enhanced {
-  @apply transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary;
-}
-
-/* Стили для таблиц */
-.table-row-hover {
-  @apply hover:bg-muted/50 transition-all duration-150 cursor-pointer hover:shadow-sm;
-}
-
-.table-header {
-  @apply bg-muted/30 text-muted-foreground font-medium text-sm tracking-wide;
-}
-
-.table-cell {
-  @apply py-3 px-4 border-b border-border;
-}
-
-/* Стили для карточек */
-.card-hover {
-  @apply hover:shadow-lg transition-all duration-200 hover:-translate-y-1 hover:border-primary/20;
-}
-
-.card-interactive {
-  @apply transition-all duration-200 hover:shadow-md active:scale-[0.99] cursor-pointer;
-}
-
-.card-financial {
-  @apply border-l-4 border-l-primary/30 hover:border-l-primary transition-colors;
-}
-
-/* Стили для кнопок */
-.btn-pulse {
-  @apply animate-pulse;
-}
-
-.btn-interactive {
-  @apply transition-all duration-150 active:scale-95 hover:shadow-md;
-}
-
-.btn-success {
-  @apply bg-green-600 hover:bg-green-700 text-white;
-}
-
-.btn-danger {
-  @apply bg-red-600 hover:bg-red-700 text-white;
-}
-
-.btn-loading {
-  @apply pointer-events-none opacity-70;
-}
-
-/* Responsive utilities */
-@media (max-width: 640px) {
-  .container {
-    @apply px-4;
-  }
-}
-
-/* Печать */
-@media print {
-  .no-print {
-    display: none;
-  }
-  
-  body {
-    @apply text-black bg-white;
+  .bg-neutral-dark {
+    background-color: var(--neutral-dark);
   }
 }

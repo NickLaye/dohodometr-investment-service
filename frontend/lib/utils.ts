@@ -13,24 +13,82 @@ export function formatCurrency(
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
   }).format(amount)
 }
 
-export function formatPercent(
+export function formatPercentage(
   value: number,
+  decimals: number = 2,
   locale: string = 'ru-RU'
 ): string {
   return new Intl.NumberFormat(locale, {
     style: 'percent',
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(value / 100)
 }
 
-export function getChangeIndicator(value: number) {
-  if (value > 0) return 'positive'
-  if (value < 0) return 'negative'
-  return 'neutral'
+export function formatNumber(
+  value: number,
+  locale: string = 'ru-RU'
+): string {
+  return new Intl.NumberFormat(locale).format(value)
+}
+
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout
+  return function executedFunction(...args: Parameters<T>) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}
+
+// Валидация пароля
+export function validatePassword(password: string): {
+  isValid: boolean
+  errors: string[]
+  strength: 'weak' | 'medium' | 'strong'
+} {
+  const errors: string[] = []
+  
+  if (password.length < 8) {
+    errors.push('Пароль должен содержать минимум 8 символов')
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Пароль должен содержать заглавную букву')
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    errors.push('Пароль должен содержать строчную букву')
+  }
+  
+  if (!/\d/.test(password)) {
+    errors.push('Пароль должен содержать цифру')
+  }
+  
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('Пароль должен содержать специальный символ')
+  }
+  
+  let strength: 'weak' | 'medium' | 'strong' = 'weak'
+  
+  if (errors.length === 0 && password.length >= 12) {
+    strength = 'strong'
+  } else if (errors.length <= 2) {
+    strength = 'medium'
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors,
+    strength
+  }
 }

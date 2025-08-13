@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Доходометр - Финансовый сервис</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&display=swap" rel="stylesheet">
+<style>@font-face{font-family:'Manrope';src:url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');}@font-face{font-family:'Roboto Serif';src:url('https://fonts.googleapis.com/css2?family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&display=swap');}:root{--main-color:#1F3B35;--accent-1:#C79A63;--accent-2:#63B8A7;--neutral-light:#F8F9F8;--neutral-dark:#2C2E2D;--transition:all 0.3s ease;--shadow:0 10px 30px rgba(0,0,0,0.1);--shadow-hover:0 15px 40px rgba(0,0,0,0.15);}.dark-theme{--main-color:#F8F9F8;--accent-1:#E0B078;--accent-2:#7ECFBE;--neutral-light:#1A1C1B;--neutral-dark:#F8F9F8;--shadow:0 10px 30px rgba(0,0,0,0.3);--shadow-hover:0 15px 40px rgba(0,0,0,0.4);}*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Manrope',sans-serif;background-color:var(--neutral-light);color:var(--main-color);transition:var(--transition);width:1248px;margin:0 auto;overflow-x:hidden;}h1,h2,h3,h4{font-family:'Roboto Serif',serif;font-weight:600;}.container{width:100%;max-width:1248px;margin:0 auto;padding:0 24px;}header{display:flex;justify-content:space-between;align-items:center;padding:24px 0;position:sticky;top:0;z-index:100;background-color:var(--neutral-light);transition:var(--transition);width:100%;}.logo{font-family:'Roboto Serif',serif;font-size:32px;font-weight:700;color:var(--main-color);text-decoration:none;display:flex;align-items:center;}.logo-icon{font-size:36px;margin-right:8px;color:var(--accent-2);}nav ul{display:flex;list-style:none;gap:32px;}nav a{text-decoration:none;color:var(--main-color);font-weight:500;transition:var(--transition);position:relative;}nav a:hover{color:var(--accent-2);}nav a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background-color:var(--accent-2);transition:var(--transition);}nav a:hover::after{width:100%;}.header-right{display:flex;align-items:center;gap:24px;}.theme-toggle{background:none;border:none;cursor:pointer;font-size:24px;color:var(--main-color);display:flex;align-items:center;justify-content:center;transition:var(--transition);}.theme-toggle:hover{color:var(--accent-2);transform:rotate(15deg);}.cta-button{background-color:var(--accent-2);color:white;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);}.cta-button:hover{background-color:var(--accent-1);transform:translateY(-2px);box-shadow:var(--shadow);}.hero{display:flex;align-items:center;justify-content:space-between;min-height:80vh;padding:80px 0;position:relative;overflow:hidden;}.hero-content{width:50%;opacity:0;transform:translateY(20px);animation:fadeInUp 1s forwards;}.hero h1{font-size:56px;margin-bottom:24px;line-height:1.1;}.hero p{font-size:18px;margin-bottom:32px;line-height:1.6;opacity:0;transform:translateY(20px);animation:fadeInUp 1s 0.3s forwards;}.hero-cta{opacity:0;transform:translateY(20px);animation:fadeInUp 1s 0.6s forwards;}.hero-visual{width:45%;position:relative;opacity:0;transform:translateX(20px);animation:fadeInRight 1s 0.3s forwards;}.hero-grid{position:absolute;top:0;left:0;width:100%;height:100%;background-image:url('https://assets-persist.lovart.ai/agent_images/8094beed-0e1f-4e1a-aaf3-039f57a269dc.png');background-size:cover;background-position:center;opacity:0.8;z-index:-1;}.benefits{padding:100px 0;position:relative;}.section-title{text-align:center;margin-bottom:60px;font-size:42px;opacity:0;transform:translateY(20px);animation:fadeInUp 1s forwards;}.benefits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;}.benefit-card{background-color:var(--neutral-light);border-radius:16px;padding:32px;box-shadow:var(--shadow);transition:var(--transition);opacity:0;transform:translateY(30px);}.benefit-card:nth-child(1){animation:fadeInUp 0.8s 0.2s forwards;}.benefit-card:nth-child(2){animation:fadeInUp 0.8s 0.4s forwards;}.benefit-card:nth-child(3){animation:fadeInUp 0.8s 0.6s forwards;}.benefit-card:hover{transform:translateY(-10px);box-shadow:var(--shadow-hover);}.benefit-icon{font-size:48px;color:var(--accent-2);margin-bottom:24px;transition:var(--transition);}.benefit-card:hover .benefit-icon{transform:rotate(10deg);}.benefit-card h3{font-size:24px;margin-bottom:16px;}.benefit-card p{margin-bottom:24px;line-height:1.6;}.micro-chart{height:40px;margin-top:20px;position:relative;}.micro-bar{display:inline-block;width:8px;background-color:var(--accent-2);margin-right:6px;border-radius:2px;position:absolute;bottom:0;height:0;transition:height 1.5s cubic-bezier(0.25,0.46,0.45,0.94);}.demo-widget{padding:100px 0;position:relative;}.widget-container{background-color:var(--neutral-light);border-radius:20px;box-shadow:var(--shadow);padding:40px;max-width:800px;margin:0 auto;position:relative;overflow:hidden;opacity:0;transform:translateY(30px);animation:fadeInUp 1s forwards;}.widget-container::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at top right,rgba(99,184,167,0.1),transparent 60%);z-index:0;}.calculator{position:relative;z-index:1;}.calculator h3{font-size:28px;margin-bottom:24px;color:var(--main-color);}.calculator-form{display:grid;grid-template-columns:1fr 1fr;gap:24px;}.form-group{margin-bottom:24px;}.form-group label{display:block;margin-bottom:8px;font-weight:500;}.range-slider{width:100%;-webkit-appearance:none;height:8px;border-radius:4px;background:linear-gradient(to right,var(--accent-2),var(--accent-1));outline:none;margin-bottom:12px;}.range-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent-2);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.2);transition:var(--transition);}.range-slider::-webkit-slider-thumb:hover{transform:scale(1.2);}.range-values{display:flex;justify-content:space-between;font-size:14px;color:var(--neutral-dark);}.calculator-result{background-color:rgba(31,59,53,0.05);padding:24px;border-radius:12px;margin-top:24px;text-align:center;}.result-title{font-size:16px;margin-bottom:8px;}.result-value{font-family:'Roboto Serif',serif;font-size:36px;font-weight:700;color:var(--accent-1);}.screenshots{padding:100px 0;display:flex;align-items:center;justify-content:space-between;}.screenshots-content{width:45%;opacity:0;transform:translateY(30px);animation:fadeInUp 1s forwards;}.screenshots-content h2{font-size:42px;margin-bottom:24px;}.screenshots-content p{margin-bottom:24px;line-height:1.6;}.feature-list{list-style:none;margin-bottom:32px;}.feature-list li{margin-bottom:16px;display:flex;align-items:center;}.feature-list i{color:var(--accent-2);margin-right:12px;font-size:20px;}.screenshots-gallery{width:50%;display:flex;justify-content:center;perspective:1000px;opacity:0;transform:translateX(30px);animation:fadeInRight 1s 0.3s forwards;}.screenshot{width:280px;height:560px;background-color:var(--neutral-light);border-radius:24px;box-shadow:var(--shadow);margin:0 -40px;transform:rotateY(15deg);transition:var(--transition);overflow:hidden;border:1px solid rgba(0,0,0,0.1);}.screenshot:hover{transform:rotateY(15deg) scale(1.05);box-shadow:var(--shadow-hover);z-index:2;}.screenshot img{width:100%;height:100%;object-fit:cover;}.cta-section{text-align:center;padding:100px 0;position:relative;overflow:hidden;}.cta-content{max-width:700px;margin:0 auto;opacity:0;transform:scale(0.95);animation:fadeInScale 1s forwards;}.cta-section h2{font-size:48px;margin-bottom:24px;}.cta-section p{font-size:18px;margin-bottom:40px;line-height:1.6;}.cta-button-large{background-color:var(--accent-2);color:white;border:none;padding:16px 40px;border-radius:12px;font-size:18px;font-weight:600;cursor:pointer;transition:var(--transition);position:relative;overflow:hidden;}.cta-button-large:hover{background-color:var(--accent-1);transform:translateY(-4px);box-shadow:var(--shadow);}.cta-button-large::after{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background-color:rgba(255,255,255,0.2);border-radius:50%;transform:translate(-50%,-50%);transition:width 0.6s,height 0.6s;}.cta-button-large:hover::after{width:300px;height:300px;}.testimonials{padding:100px 0;position:relative;}.testimonials-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px;}.testimonial-card{background-color:var(--neutral-light);border-radius:16px;padding:32px;box-shadow:var(--shadow);transition:var(--transition);opacity:0;transform:translateY(30px);position:relative;overflow:hidden;}.testimonial-card:nth-child(1){animation:fadeInUp 0.8s 0.2s forwards;}.testimonial-card:nth-child(2){animation:fadeInUp 0.8s 0.4s forwards;}.testimonial-card:nth-child(3){animation:fadeInUp 0.8s 0.6s forwards;}.testimonial-card:nth-child(4){animation:fadeInUp 0.8s 0.8s forwards;}.testimonial-card:hover{transform:translateY(-10px);box-shadow:var(--shadow-hover);}.testimonial-card::before{content:'"';position:absolute;top:20px;right:30px;font-size:120px;font-family:'Roboto Serif',serif;color:rgba(99,184,167,0.1);line-height:0.6;}.testimonial-header{display:flex;align-items:center;margin-bottom:20px;}.testimonial-avatar{width:60px;height:60px;border-radius:50%;margin-right:16px;background-color:var(--accent-2);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:24px;}.testimonial-author h4{font-size:18px;margin-bottom:4px;}.testimonial-author p{font-size:14px;color:var(--neutral-dark);opacity:0.8;}.testimonial-content{line-height:1.6;}.faq{padding:100px 0;}.faq-list{max-width:800px;margin:0 auto;}.faq-item{margin-bottom:16px;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);opacity:0;transform:translateX(-30px);}.faq-item:nth-child(1){animation:fadeInLeft 0.8s 0.2s forwards;}.faq-item:nth-child(2){animation:fadeInLeft 0.8s 0.3s forwards;}.faq-item:nth-child(3){animation:fadeInLeft 0.8s 0.4s forwards;}.faq-item:nth-child(4){animation:fadeInLeft 0.8s 0.5s forwards;}.faq-question{background-color:var(--neutral-light);padding:24px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:var(--transition);}.faq-question h3{font-size:18px;font-weight:600;}.faq-toggle{font-size:24px;transition:var(--transition);}.faq-answer{background-color:var(--neutral-light);padding:0 24px;max-height:0;overflow:hidden;transition:max-height 0.5s ease,padding 0.5s ease;}.faq-answer p{padding-bottom:24px;line-height:1.6;}.faq-item.active .faq-question{background-color:rgba(99,184,167,0.1);}.faq-item.active .faq-toggle{transform:rotate(45deg);}.faq-item.active .faq-answer{max-height:300px;padding:24px 24px;}footer{background-color:var(--main-color);color:var(--neutral-light);padding:80px 0 40px;position:relative;}.footer-content{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:60px;opacity:0;transform:translateY(30px);animation:fadeInUp 1s forwards;}.footer-column h4{font-size:20px;margin-bottom:24px;color:var(--accent-2);}.footer-links{list-style:none;}.footer-links li{margin-bottom:12px;}.footer-links a{color:var(--neutral-light);text-decoration:none;transition:var(--transition);}.footer-links a:hover{color:var(--accent-2);padding-left:5px;}.social-links{display:flex;gap:16px;margin-top:20px;}.social-link{width:40px;height:40px;border-radius:50%;background-color:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:var(--neutral-light);text-decoration:none;transition:var(--transition);}.social-link:hover{background-color:var(--accent-2);transform:translateY(-5px);}.footer-bottom{text-align:center;padding-top:40px;border-top:1px solid rgba(255,255,255,0.1);opacity:0;transform:translateY(20px);animation:fadeInUp 1s 0.3s forwards;}.back-to-top{position:absolute;bottom:40px;right:40px;width:50px;height:50px;border-radius:50%;background-color:var(--accent-2);color:white;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:24px;box-shadow:var(--shadow);transition:var(--transition);opacity:0;transform:translateY(20px);animation:fadeInUp 1s 0.5s forwards;}.back-to-top:hover{background-color:var(--accent-1);transform:translateY(-5px);}@keyframes fadeInUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}@keyframes fadeInRight{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}@keyframes fadeInLeft{from{opacity:0;transform:translateX(-30px);}to{opacity:1;transform:translateX(0);}}@keyframes fadeInScale{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(99,184,167,0.7);}70%{box-shadow:0 0 0 15px rgba(99,184,167,0);}100%{box-shadow:0 0 0 0 rgba(99,184,167,0);}}.animate-pulse{animation:pulse 2s infinite;}@media (max-width:1024px){.container{padding:0 20px;}.hero{flex-direction:column;text-align:center;}.hero-content,.hero-visual{width:100%;}.hero-visual{margin-top:40px;}.benefits-grid{grid-template-columns:repeat(2,1fr);}.screenshots{flex-direction:column;}.screenshots-content,.screenshots-gallery{width:100%;}.screenshots-gallery{margin-top:40px;}.testimonials-grid{grid-template-columns:1fr;}.footer-content{grid-template-columns:repeat(2,1fr);}}@media (max-width:768px){.benefits-grid{grid-template-columns:1fr;}.calculator-form{grid-template-columns:1fr;}.footer-content{grid-template-columns:1fr;}}</style>
+</head>
+<body>
+<div class="container">
+<header>
+<a href="#" class="logo">
+<i class="ri-line-chart-fill logo-icon"></i>
+Доходометр
+</a>
+<nav>
+<ul>
+<li><a href="#">Главная</a></li>
+<li><a href="#">Функции</a></li>
+<li><a href="#">Тарифы</a></li>
+<li><a href="#">Контакты</a></li>
+</ul>
+</nav>
+<div class="header-right">
+<button class="theme-toggle" id="theme-toggle">
+<i class="ri-sun-line"></i>
+</button>
+<button class="cta-button">Войти</button>
+</div>
+</header>
+<section class="hero">
+<div class="hero-content">
+<h1>Управляйте финансами с умом</h1>
+<p>Доходометр — это современный инструмент для анализа и планирования личных финансов. Отслеживайте доходы, оптимизируйте расходы и достигайте финансовых целей.</p>
+<button class="cta-button hero-cta">Начать бесплатно</button>
+</div>
+<div class="hero-visual">
+<div class="hero-grid"></div>
+</div>
+</section>
+<section class="benefits">
+<h2 class="section-title">Преимущества сервиса</h2>
+<div class="benefits-grid">
+<div class="benefit-card">
+<i class="ri-line-chart-line benefit-icon"></i>
+<h3>Финансовая аналитика</h3>
+<p>Получайте детальные отчеты о движении средств, анализируйте тренды и оптимизируйте бюджет.</p>
+<div class="micro-chart">
+<span class="micro-bar" style="left: 0; height: 70%;"></span>
+<span class="micro-bar" style="left: 14px; height: 40%;"></span>
+<span class="micro-bar" style="left: 28px; height: 90%;"></span>
+<span class="micro-bar" style="left: 42px; height: 60%;"></span>
+<span class="micro-bar" style="left: 56px; height: 80%;"></span>
+<span class="micro-bar" style="left: 70px; height: 50%;"></span>
+<span class="micro-bar" style="left: 84px; height: 100%;"></span>
+</div>
+</div>
+<div class="benefit-card">
+<i class="ri-notification-line benefit-icon"></i>
+<h3>Умные уведомления</h3>
+<p>Система оповещений о важных финансовых событиях, платежах и достижении целей.</p>
+<div class="micro-chart">
+<span class="micro-bar" style="left: 0; height: 60%;"></span>
+<span class="micro-bar" style="left: 14px; height: 80%;"></span>
+<span class="micro-bar" style="left: 28px; height: 50%;"></span>
+<span class="micro-bar" style="left: 42px; height: 90%;"></span>
+<span class="micro-bar" style="left: 56px; height: 40%;"></span>
+<span class="micro-bar" style="left: 70px; height: 70%;"></span>
+<span class="micro-bar" style="left: 84px; height: 85%;"></span>
+</div>
+</div>
+<div class="benefit-card">
+<i class="ri-shield-check-line benefit-icon"></i>
+<h3>Безопасность данных</h3>
+<p>Шифрование банковского уровня и многофакторная аутентификация для защиты ваших финансовых данных.</p>
+<div class="micro-chart">
+<span class="micro-bar" style="left: 0; height: 90%;"></span>
+<span class="micro-bar" style="left: 14px; height: 95%;"></span>
+<span class="micro-bar" style="left: 28px; height: 85%;"></span>
+<span class="micro-bar" style="left: 42px; height: 100%;"></span>
+<span class="micro-bar" style="left: 56px; height: 92%;"></span>
+<span class="micro-bar" style="left: 70px; height: 88%;"></span>
+<span class="micro-bar" style="left: 84px; height: 97%;"></span>
+</div>
+</div>
+</div>
+</section>
+<section class="demo-widget">
+<h2 class="section-title">Попробуйте в действии</h2>
+<div class="widget-container">
+<div class="calculator">
+<h3>Калькулятор инвестиций</h3>
+<div class="calculator-form">
+<div class="form-group">
+<label>Начальная сумма (₽)</label>
+<input type="range" class="range-slider" id="initial-amount" min="10000" max="1000000" step="10000" value="100000">
+<div class="range-values">
+<span>10 000 ₽</span>
+<span id="initial-amount-value">100 000 ₽</span>
+<span>1 000 000 ₽</span>
+</div>
+</div>
+<div class="form-group">
+<label>Ежемесячное пополнение (₽)</label>
+<input type="range" class="range-slider" id="monthly-deposit" min="0" max="50000" step="1000" value="5000">
+<div class="range-values">
+<span>0 ₽</span>
+<span id="monthly-deposit-value">5 000 ₽</span>
+<span>50 000 ₽</span>
+</div>
+</div>
+<div class="form-group">
+<label>Срок инвестирования (лет)</label>
+<input type="range" class="range-slider" id="investment-term" min="1" max="30" step="1" value="10">
+<div class="range-values">
+<span>1 год</span>
+<span id="investment-term-value">10 лет</span>
+<span>30 лет</span>
+</div>
+</div>
+<div class="form-group">
+<label>Ожидаемая доходность (%)</label>
+<input type="range" class="range-slider" id="expected-return" min="1" max="20" step="0.5" value="8">
+<div class="range-values">
+<span>1%</span>
+<span id="expected-return-value">8%</span>
+<span>20%</span>
+</div>
+</div>
+</div>
+<div class="calculator-result">
+<div class="result-title">Итоговая сумма через 10 лет:</div>
+<div class="result-value" id="result-value">1 745 317 ₽</div>
+</div>
+</div>
+</div>
+</section>
+<section class="screenshots">
+<div class="screenshots-content">
+<h2>Удобный интерфейс</h2>
+<p>Доходометр разработан с учетом современных требований к пользовательскому опыту. Интуитивно понятный интерфейс позволяет быстро освоить все функции приложения.</p>
+<ul class="feature-list">
+<li><i class="ri-check-line"></i> Персональная аналитическая панель</li>
+<li><i class="ri-check-line"></i> Автоматическая категоризация расходов</li>
+<li><i class="ri-check-line"></i> Планирование бюджета и финансовых целей</li>
+<li><i class="ri-check-line"></i> Синхронизация с банковскими счетами</li>
+</ul>
+<button class="cta-button">Подробнее о функциях</button>
+</div>
+<div class="screenshots-gallery">
+<div class="screenshot">
+<div style="background-color: #63B8A7; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
+<i class="ri-bar-chart-grouped-line" style="font-size: 80px; margin-bottom: 20px;"></i>
+<h3 style="font-size: 24px; margin-bottom: 10px;">Аналитика</h3>
+<p style="text-align: center; padding: 0 20px;">Детальные отчеты о ваших финансах</p>
+</div>
+</div>
+<div class="screenshot">
+<div style="background-color: #1F3B35; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
+<i class="ri-wallet-3-line" style="font-size: 80px; margin-bottom: 20px; color: #C79A63;"></i>
+<h3 style="font-size: 24px; margin-bottom: 10px;">Бюджет</h3>
+<p style="text-align: center; padding: 0 20px;">Планирование и контроль расходов</p>
+</div>
+</div>
+</div>
+</section>
+<section class="cta-section">
+<div class="cta-content">
+<h2>Начните управлять финансами уже сегодня</h2>
+<p>Присоединитесь к тысячам пользователей, которые уже оптимизировали свои финансы с помощью Доходометра.</p>
+<button class="cta-button-large animate-pulse">Создать бесплатный аккаунт</button>
+</div>
+</section>
+<section class="testimonials">
+<h2 class="section-title">Отзывы пользователей</h2>
+<div class="testimonials-grid">
+<div class="testimonial-card">
+<div class="testimonial-header">
+<div class="testimonial-avatar">АК</div>
+<div class="testimonial-author">
+<h4>Алексей Кузнецов</h4>
+<p>Предприниматель</p>
+</div>
+</div>
+<div class="testimonial-content">
+<p>Доходометр помог мне навести порядок в финансах моего бизнеса. Теперь я точно знаю, на что уходят деньги и где можно оптимизировать расходы.</p>
+</div>
+</div>
+<div class="testimonial-card">
+<div class="testimonial-header">
+<div class="testimonial-avatar">ЕС</div>
+<div class="testimonial-author">
+<h4>Екатерина Смирнова</h4>
+<p>Фрилансер</p>
+</div>
+</div>
+<div class="testimonial-content">
+<p>Как фрилансеру, мне важно контролировать нерегулярные доходы. С Доходометром я легко планирую бюджет и откладываю на налоги.</p>
+</div>
+</div>
+<div class="testimonial-card">
+<div class="testimonial-header">
+<div class="testimonial-avatar">ДМ</div>
+<div class="testimonial-author">
+<h4>Дмитрий Морозов</h4>
+<p>Менеджер проектов</p>
+</div>
+</div>
+<div class="testimonial-content">
+<p>Удобный интерфейс и мощная аналитика. За полгода использования сервиса смог накопить на первый взнос по ипотеке.</p>
+</div>
+</div>
+<div class="testimonial-card">
+<div class="testimonial-header">
+<div class="testimonial-avatar">ОП</div>
+<div class="testimonial-author">
+<h4>Ольга Петрова</h4>
+<p>Бухгалтер</p>
+</div>
+</div>
+<div class="testimonial-content">
+<p>Как профессионал в финансовой сфере, я оценила точность и детализацию отчетов. Доходометр — это то, что нужно для личных финансов.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="faq">
+<h2 class="section-title">Часто задаваемые вопросы</h2>
+<div class="faq-list">
+<div class="faq-item">
+<div class="faq-question">
+<h3>Как начать пользоваться сервисом?</h3>
+<div class="faq-toggle">+</div>
+</div>
+<div class="faq-answer">
+<p>Чтобы начать пользоваться Доходометром, просто зарегистрируйтесь на сайте или в приложении, используя email или аккаунт в социальных сетях. После этого вы сможете добавить свои счета и начать отслеживать финансы.</p>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-question">
+<h3>Безопасно ли использовать Доходометр?</h3>
+<div class="faq-toggle">+</div>
+</div>
+<div class="faq-answer">
+<p>Да, безопасность — наш приоритет. Мы используем шифрование банковского уровня для защиты ваших данных. Сервис не хранит пароли от банковских аккаунтов и использует только режим чтения при подключении к банкам.</p>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-question">
+<h3>Сколько стоит использование сервиса?</h3>
+<div class="faq-toggle">+</div>
+</div>
+<div class="faq-answer">
+<p>Доходометр предлагает бесплатный базовый план с ограниченным функционалом. Для доступа ко всем возможностям доступны премиум-подписки от 299 ₽ в месяц. Подробнее о тарифах можно узнать в разделе "Тарифы".</p>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-question">
+<h3>Можно ли синхронизировать данные с банковскими счетами?</h3>
+<div class="faq-toggle">+</div>
+</div>
+<div class="faq-answer">
+<p>Да, Доходометр поддерживает синхронизацию с большинством крупных российских банков через защищенный API. Это позволяет автоматически импортировать историю операций без ручного ввода данных.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<footer>
+<div class="container">
+<div class="footer-content">
+<div class="footer-column">
+<h4>О сервисе</h4>
+<ul class="footer-links">
+<li><a href="#">О нас</a></li>
+<li><a href="#">Команда</a></li>
+<li><a href="#">Карьера</a></li>
+<li><a href="#">Блог</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Сервис</h4>
+<ul class="footer-links">
+<li><a href="#">Функции</a></li>
+<li><a href="#">Тарифы</a></li>
+<li><a href="#">Интеграции</a></li>
+<li><a href="#">API</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Поддержка</h4>
+<ul class="footer-links">
+<li><a href="#">Справка</a></li>
+<li><a href="#">Обучение</a></li>
+<li><a href="#">Сообщество</a></li>
+<li><a href="#">Контакты</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Контакты</h4>
+<p>info@dohodometr.ru</p>
+<p>+7 (800) 123-45-67</p>
+<div class="social-links">
+<a href="#" class="social-link"><i class="ri-telegram-fill"></i></a>
+<a href="#" class="social-link"><i class="ri-vk-fill"></i></a>
+<a href="#" class="social-link"><i class="ri-youtube-fill"></i></a>
+</div>
+</div>
+</div>
+<div class="footer-bottom">
+<p>© 2023 Доходометр. Все права защищены.</p>
+</div>
+<a href="#" class="back-to-top"><i class="ri-arrow-up-line"></i></a>
+</div>
+</footer>
+<script>const themeToggle =document.getElementById('theme-toggle');const body =document.body;themeToggle.addEventListener('click',() =>{body.classList.toggle('dark-theme');if (body.classList.contains('dark-theme')) {themeToggle.innerHTML ='<i class="ri-moon-line"></i>';} else {themeToggle.innerHTML ='<i class="ri-sun-line"></i>';}
+});const faqItems =document.querySelectorAll('.faq-item');faqItems.forEach(item =>{const question =item.querySelector('.faq-question');question.addEventListener('click',() =>{const isActive =item.classList.contains('active');faqItems.forEach(faqItem =>{faqItem.classList.remove('active');});if (!isActive) {item.classList.add('active');}
+});});const initialAmountSlider =document.getElementById('initial-amount');const monthlyDepositSlider =document.getElementById('monthly-deposit');const investmentTermSlider =document.getElementById('investment-term');const expectedReturnSlider =document.getElementById('expected-return');const initialAmountValue =document.getElementById('initial-amount-value');const monthlyDepositValue =document.getElementById('monthly-deposit-value');const investmentTermValue =document.getElementById('investment-term-value');const expectedReturnValue =document.getElementById('expected-return-value');const resultValue =document.getElementById('result-value');function formatCurrency(value) {return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';}
+function calculateInvestment() {const principal =parseFloat(initialAmountSlider.value);const monthlyContribution =parseFloat(monthlyDepositSlider.value);const years =parseFloat(investmentTermSlider.value);const rate =parseFloat(expectedReturnSlider.value) / 100;const months =years *12;const monthlyRate =rate / 12;let futureValue =principal;for (let i =0;i < months;i++) {futureValue =(futureValue + monthlyContribution) *(1 + monthlyRate);}
+resultValue.textContent =formatCurrency(Math.round(futureValue));resultValue.parentElement.querySelector('.result-title').textContent =`Итоговая сумма через ${years} ${getYearText(years)}:`;}
+function getYearText(years) {if (years % 10 ===1 &&years % 100 !==11) {return 'год';} else if ([2,3,4].includes(years % 10) &&![12,13,14].includes(years % 100)) {return 'года';} else {return 'лет';}
+}
+initialAmountSlider.addEventListener('input',() =>{initialAmountValue.textContent =formatCurrency(initialAmountSlider.value);calculateInvestment();});monthlyDepositSlider.addEventListener('input',() =>{monthlyDepositValue.textContent =formatCurrency(monthlyDepositSlider.value);calculateInvestment();});investmentTermSlider.addEventListener('input',() =>{investmentTermValue.textContent =`${investmentTermSlider.value} ${getYearText(investmentTermSlider.value)}`;calculateInvestment();});expectedReturnSlider.addEventListener('input',() =>{expectedReturnValue.textContent =`${expectedReturnSlider.value}%`;calculateInvestment();});const observer =new IntersectionObserver((entries) =>{entries.forEach(entry =>{if (entry.isIntersecting) {const bars =entry.target.querySelectorAll('.micro-bar');bars.forEach(bar =>{const height =bar.style.height;bar.style.height ='0';setTimeout(() =>{bar.style.height =height;},100);});}
+});},{threshold:0.5 });document.querySelectorAll('.micro-chart').forEach(chart =>{observer.observe(chart);});calculateInvestment();</script>
+</body>
+</html>

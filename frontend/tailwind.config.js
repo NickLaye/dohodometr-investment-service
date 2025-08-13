@@ -17,7 +17,16 @@ module.exports = {
       },
     },
     extend: {
+      // Дизайн-система "Доходометр" - Фирменные цвета
       colors: {
+        // Основная палитра Доходометр
+        'dohodometr': {
+          'primary': '#1F3B35',        // Глубоко-изумрудный
+          'accent-1': '#C79A63',       // Медно-песочный  
+          'accent-2': '#63B8A7',       // Свежий мятный
+          'neutral-light': '#F8F9F8',  // Нейтральный светлый
+          'neutral-dark': '#2C2E2D',   // Нейтральный тёмный
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -63,6 +72,26 @@ module.exports = {
           DEFAULT: "hsl(217, 91%, 60%)",
           foreground: "hsl(210, 40%, 98%)",
         },
+        
+        // Переопределяем shadcn/ui цвета для "Доходометр"
+        primary: {
+          DEFAULT: "var(--primary)",  // Изумрудный как основной
+          foreground: "var(--neutral-light)",
+        },
+        secondary: {
+          DEFAULT: "var(--accent-1)",  // Песочный как вторичный
+          foreground: "var(--primary)",
+        },
+        accent: {
+          DEFAULT: "var(--accent-2)",  // Мятный как акцент
+          foreground: "var(--primary)",
+        },
+        
+        // Дополнительные цвета дизайн-системы
+        'accent-1': 'var(--accent-1)',
+        'accent-2': 'var(--accent-2)',
+        'neutral-light': 'var(--neutral-light)',
+        'neutral-dark': 'var(--neutral-dark)',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -114,8 +143,12 @@ module.exports = {
         "slide-in-from-right": "slide-in-from-right 0.3s ease-out",
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui"],
-        mono: ["Fira Code", "ui-monospace", "SFMono-Regular"],
+        // Дизайн-система "Доходометр"
+        'primary': ['Manrope', 'Inter', 'ui-sans-serif', 'system-ui'],
+        'accent': ['Roboto Serif Narrow', 'Georgia', 'serif'],
+        sans: ["Manrope", "Inter", "ui-sans-serif", "system-ui"],
+        serif: ["Roboto Serif Narrow", "Georgia", "serif"],
+        mono: ["JetBrains Mono", "Fira Code", "ui-monospace", "SFMono-Regular"],
       },
       fontSize: {
         "2xs": ["0.625rem", { lineHeight: "0.75rem" }],

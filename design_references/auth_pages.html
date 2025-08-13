@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Доходометр - Финансовый сервис</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+<style>@font-face{font-family:'Manrope';src:url('https://assets-persist.lovart.ai/agent-static-assets/AlibabaSans-Regular.otf') format('opentype');font-weight:normal;font-style:normal;}@font-face{font-family:'Manrope';src:url('https://assets-persist.lovart.ai/agent-static-assets/AlibabaSans-Medium.otf') format('opentype');font-weight:500;font-style:normal;}@font-face{font-family:'Manrope';src:url('https://assets-persist.lovart.ai/agent-static-assets/Alibaba-PuHuiTi-Bold.otf') format('opentype');font-weight:bold;font-style:normal;}@font-face{font-family:'Roboto Serif Narrow';src:url('https://assets-persist.lovart.ai/agent-static-assets/NotoSerifCJKsc-Regular.otf') format('opentype');font-weight:normal;font-style:normal;}@font-face{font-family:'Roboto Serif Narrow';src:url('https://assets-persist.lovart.ai/agent-static-assets/NotoSerifCJKsc-Bold.otf') format('opentype');font-weight:bold;font-style:normal;}:root{--emerald:#1F3B35;--copper-sand:#C79A63;--mint:#63B8A7;--light:#F8F9F8;--dark:#2C2E2D;--shadow:rgba(0,0,0,0.08);--transition:all 0.3s ease;}*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Manrope',sans-serif;background-color:var(--light);color:var(--dark);min-height:100vh;display:flex;width:1248px;margin:0 auto;background-image:url('https://assets-persist.lovart.ai/agent_images/8094beed-0e1f-4e1a-aaf3-039f57a269dc.png');background-size:cover;background-position:center;}.container{display:flex;width:100%;height:100%;padding:40px;}.auth-container{display:flex;width:100%;justify-content:space-between;gap:40px;}.auth-card{background-color:rgba(255,255,255,0.9);border-radius:16px;box-shadow:0 8px 24px var(--shadow);padding:40px;width:100%;max-width:450px;margin:0 auto;transition:var(--transition);}.auth-card:hover{box-shadow:0 12px 32px rgba(0,0,0,0.12);}.auth-header{text-align:center;margin-bottom:32px;}.logo{font-family:'Roboto Serif Narrow',serif;font-size:48px;font-weight:bold;color:var(--emerald);margin-bottom:16px;}.auth-title{font-family:'Roboto Serif Narrow',serif;font-size:24px;font-weight:bold;color:var(--emerald);margin-bottom:8px;}.auth-subtitle{font-size:14px;color:var(--dark);opacity:0.7;}.form-group{margin-bottom:20px;}.form-label{display:block;font-size:14px;margin-bottom:6px;color:var(--dark);}.form-input{width:100%;padding:12px 16px;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-family:'Manrope',sans-serif;font-size:14px;transition:var(--transition);background-color:rgba(255,255,255,0.8);}.form-input:focus{outline:none;border-color:var(--mint);box-shadow:0 0 0 3px rgba(99,184,167,0.2);}.input-group{position:relative;}.input-icon{position:absolute;top:50%;transform:translateY(-50%);left:16px;color:var(--dark);opacity:0.5;}.input-with-icon{padding-left:42px;}.password-toggle{position:absolute;top:50%;transform:translateY(-50%);right:16px;color:var(--dark);opacity:0.5;cursor:pointer;background:none;border:none;}.checkbox-group{display:flex;align-items:center;margin-bottom:20px;}.checkbox-input{margin-right:8px;accent-color:var(--mint);}.checkbox-label{font-size:14px;color:var(--dark);}.forgot-password{font-size:14px;color:var(--mint);text-decoration:none;margin-left:auto;transition:var(--transition);}.forgot-password:hover{color:var(--emerald);text-decoration:underline;}.btn{display:inline-block;padding:12px 24px;border-radius:8px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:500;text-align:center;cursor:pointer;transition:var(--transition);border:none;}.btn-primary{background-color:var(--mint);color:white;width:100%;}.btn-primary:hover{background-color:#4da695;}.btn-secondary{background-color:var(--copper-sand);color:white;width:100%;}.btn-secondary:hover{background-color:#b58a57;}.btn-outline{background-color:transparent;border:1px solid rgba(0,0,0,0.1);color:var(--dark);}.btn-outline:hover{background-color:rgba(0,0,0,0.05);}.divider{display:flex;align-items:center;margin:24px 0;color:var(--dark);opacity:0.5;}.divider::before,.divider::after{content:"";flex:1;height:1px;background-color:rgba(0,0,0,0.1);}.divider::before{margin-right:16px;}.divider::after{margin-left:16px;}.social-login{display:flex;justify-content:center;gap:16px;margin-bottom:24px;}.social-btn{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;background-color:white;border:1px solid rgba(0,0,0,0.1);transition:var(--transition);}.social-btn:hover{background-color:rgba(0,0,0,0.05);}.auth-footer{text-align:center;margin-top:24px;font-size:14px;color:var(--dark);}.auth-link{color:var(--copper-sand);text-decoration:none;font-weight:500;transition:var(--transition);}.auth-link:hover{text-decoration:underline;}.language-selector{position:absolute;bottom:16px;right:16px;font-size:12px;color:var(--dark);opacity:0.7;}.progress-bar{display:flex;justify-content:space-between;margin-bottom:32px;position:relative;}.progress-bar::before{content:"";position:absolute;top:50%;left:0;right:0;height:2px;background-color:rgba(0,0,0,0.1);transform:translateY(-50%);z-index:1;}.progress-step{width:32px;height:32px;border-radius:50%;background-color:white;border:2px solid rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;font-weight:500;position:relative;z-index:2;}.progress-step.active{background-color:var(--mint);border-color:var(--mint);color:white;}.progress-step.completed{background-color:var(--copper-sand);border-color:var(--copper-sand);color:white;}.progress-labels{display:flex;justify-content:space-between;margin-top:8px;}.progress-label{font-size:12px;color:var(--dark);opacity:0.7;text-align:center;width:33.33%;}.form-step{display:none;}.form-step.active{display:block;}.password-strength{height:4px;background-color:rgba(0,0,0,0.1);border-radius:2px;margin-top:8px;overflow:hidden;}.password-strength-meter{height:100%;width:0%;transition:var(--transition);}.weak{width:33%;background-color:#ff4d4d;}.medium{width:66%;background-color:#ffaa00;}.strong{width:100%;background-color:#00cc66;}.password-strength-text{font-size:12px;margin-top:4px;}.step-buttons{display:flex;justify-content:space-between;margin-top:32px;}.success-animation{text-align:center;margin:32px 0;}.success-icon{font-size:64px;color:var(--mint);animation:scaleUp 0.5s ease;}@keyframes scaleUp{0%{transform:scale(0);opacity:0;}70%{transform:scale(1.2);}100%{transform:scale(1);opacity:1;}}.success-title{font-family:'Roboto Serif Narrow',serif;font-size:24px;font-weight:bold;color:var(--emerald);margin:16px 0;}.success-message{color:var(--dark);margin-bottom:24px;}.registration-card{max-width:600px;}.radio-group{display:flex;gap:16px;margin-top:8px;}.radio-item{flex:1;position:relative;}.radio-input{position:absolute;opacity:0;width:0;height:0;}.radio-label{display:block;padding:12px;border:1px solid rgba(0,0,0,0.1);border-radius:8px;text-align:center;cursor:pointer;transition:var(--transition);}.radio-input:checked + .radio-label{border-color:var(--mint);background-color:rgba(99,184,167,0.1);}.checkbox-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px;}.summary-item{margin-bottom:16px;}.summary-label{font-size:12px;color:var(--dark);opacity:0.7;margin-bottom:4px;}.summary-value{font-weight:500;}.theme-switch{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--dark);cursor:pointer;font-size:20px;}@media (max-width:768px){.auth-container{flex-direction:column;}.auth-card{padding:24px;}.checkbox-list{grid-template-columns:1fr;}}</style>
+</head>
+<body>
+<div class="container">
+<div class="auth-container">
+<div class="auth-card">
+<div class="auth-header">
+<div class="logo">Д</div>
+<h1 class="auth-title">Вход в личный кабинет</h1>
+<p class="auth-subtitle">Добро пожаловать в Доходометр</p>
+</div>
+<form>
+<div class="form-group">
+<label class="form-label" for="email">Email или имя пользователя</label>
+<div class="input-group">
+<i class="ri-user-line input-icon"></i>
+<input type="text" id="email" class="form-input input-with-icon" placeholder="Введите email или имя пользователя">
+</div>
+</div>
+<div class="form-group">
+<label class="form-label" for="password">Пароль</label>
+<div class="input-group">
+<i class="ri-lock-line input-icon"></i>
+<input type="password" id="password" class="form-input input-with-icon" placeholder="Введите пароль">
+<button type="button" class="password-toggle">
+<i class="ri-eye-line"></i>
+</button>
+</div>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="remember" class="checkbox-input">
+<label for="remember" class="checkbox-label">Запомнить меня</label>
+<a href="#" class="forgot-password">Забыли пароль?</a>
+</div>
+<button type="submit" class="btn btn-primary">Войти</button>
+</form>
+<div class="divider">или</div>
+<div class="social-login">
+<a href="#" class="social-btn">
+<i class="ri-google-fill"></i>
+</a>
+<a href="#" class="social-btn">
+<i class="ri-facebook-fill"></i>
+</a>
+<a href="#" class="social-btn">
+<i class="ri-apple-fill"></i>
+</a>
+</div>
+<div class="auth-footer">
+<p>Нет аккаунта? <a href="#" class="auth-link">Зарегистрироваться</a></p>
+</div>
+</div>
+<div class="auth-card registration-card">
+<div class="auth-header">
+<div class="logo">Д</div>
+<h1 class="auth-title">Регистрация</h1>
+<p class="auth-subtitle">Создайте аккаунт для доступа к сервису</p>
+</div>
+<div class="progress-bar">
+<div class="progress-step active">1</div>
+<div class="progress-step">2</div>
+<div class="progress-step">3</div>
+</div>
+<div class="progress-labels">
+<div class="progress-label">Основная информация</div>
+<div class="progress-label">Инвестиционный профиль</div>
+<div class="progress-label">Подтверждение</div>
+</div>
+<form>
+<div class="form-step active">
+<div class="form-group">
+<label class="form-label" for="firstName">Имя</label>
+<input type="text" id="firstName" class="form-input" placeholder="Введите имя">
+</div>
+<div class="form-group">
+<label class="form-label" for="lastName">Фамилия</label>
+<input type="text" id="lastName" class="form-input" placeholder="Введите фамилию">
+</div>
+<div class="form-group">
+<label class="form-label" for="regEmail">Email</label>
+<input type="email" id="regEmail" class="form-input" placeholder="Введите email">
+</div>
+<div class="form-group">
+<label class="form-label" for="regPassword">Пароль</label>
+<div class="input-group">
+<input type="password" id="regPassword" class="form-input" placeholder="Создайте пароль">
+<button type="button" class="password-toggle">
+<i class="ri-eye-line"></i>
+</button>
+</div>
+<div class="password-strength">
+<div class="password-strength-meter medium"></div>
+</div>
+<div class="password-strength-text">Средний уровень безопасности</div>
+</div>
+<div class="form-group">
+<label class="form-label" for="confirmPassword">Подтверждение пароля</label>
+<div class="input-group">
+<input type="password" id="confirmPassword" class="form-input" placeholder="Подтвердите пароль">
+</div>
+</div>
+<div class="step-buttons">
+<div></div> 
+<button type="button" class="btn btn-primary next-step">Далее</button>
+</div>
+</div>
+<div class="form-step">
+<div class="form-group">
+<label class="form-label">Уровень опыта инвестирования</label>
+<div class="radio-group">
+<div class="radio-item">
+<input type="radio" name="experience" id="beginner" class="radio-input">
+<label for="beginner" class="radio-label">Начинающий</label>
+</div>
+<div class="radio-item">
+<input type="radio" name="experience" id="intermediate" class="radio-input">
+<label for="intermediate" class="radio-label">Средний</label>
+</div>
+<div class="radio-item">
+<input type="radio" name="experience" id="advanced" class="radio-input">
+<label for="advanced" class="radio-label">Опытный</label>
+</div>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Инвестиционные цели</label>
+<div class="checkbox-list">
+<div class="checkbox-group">
+<input type="checkbox" id="goal1" class="checkbox-input">
+<label for="goal1" class="checkbox-label">Сохранение капитала</label>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="goal2" class="checkbox-input">
+<label for="goal2" class="checkbox-label">Пассивный доход</label>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="goal3" class="checkbox-input">
+<label for="goal3" class="checkbox-label">Рост капитала</label>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="goal4" class="checkbox-input">
+<label for="goal4" class="checkbox-label">Пенсионные накопления</label>
+</div>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Интересующие инструменты</label>
+<div class="checkbox-list">
+<div class="checkbox-group">
+<input type="checkbox" id="interest1" class="checkbox-input">
+<label for="interest1" class="checkbox-label">Акции</label>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="interest2" class="checkbox-input">
+<label for="interest2" class="checkbox-label">Облигации</label>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="interest3" class="checkbox-input">
+<label for="interest3" class="checkbox-label">ETF</label>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="interest4" class="checkbox-input">
+<label for="interest4" class="checkbox-label">Криптовалюты</label>
+</div>
+</div>
+</div>
+<div class="step-buttons">
+<button type="button" class="btn btn-outline prev-step">Назад</button>
+<button type="button" class="btn btn-primary next-step">Далее</button>
+</div>
+</div>
+<div class="form-step">
+<h3 class="auth-subtitle" style="margin-bottom: 16px;">Проверьте введенную информацию</h3>
+<div class="summary-item">
+<div class="summary-label">Имя и фамилия</div>
+<div class="summary-value">Иван Иванов</div>
+</div>
+<div class="summary-item">
+<div class="summary-label">Email</div>
+<div class="summary-value">ivan@example.com</div>
+</div>
+<div class="summary-item">
+<div class="summary-label">Опыт инвестирования</div>
+<div class="summary-value">Средний</div>
+</div>
+<div class="summary-item">
+<div class="summary-label">Инвестиционные цели</div>
+<div class="summary-value">Пассивный доход, Рост капитала</div>
+</div>
+<div class="checkbox-group" style="margin-top: 24px;">
+<input type="checkbox" id="terms" class="checkbox-input">
+<label for="terms" class="checkbox-label">Я принимаю <a href="#" class="auth-link">условия использования</a></label>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="privacy" class="checkbox-input">
+<label for="privacy" class="checkbox-label">Я согласен с <a href="#" class="auth-link">политикой конфиденциальности</a></label>
+</div>
+<div class="checkbox-group">
+<input type="checkbox" id="marketing" class="checkbox-input">
+<label for="marketing" class="checkbox-label">Я хочу получать новости и предложения</label>
+</div>
+<div class="step-buttons">
+<button type="button" class="btn btn-outline prev-step">Назад</button>
+<button type="button" class="btn btn-secondary complete-registration">Завершить регистрацию</button>
+</div>
+</div>
+<div class="form-step" id="success-step">
+<div class="success-animation">
+<i class="ri-check-line success-icon"></i>
+<h2 class="success-title">Регистрация успешно завершена!</h2>
+<p class="success-message">На ваш email отправлено письмо с подтверждением. Пожалуйста, перейдите по ссылке в письме для активации аккаунта.</p>
+</div>
+<button type="button" class="btn btn-primary">Перейти в личный кабинет</button>
+</div>
+</form>
+<div class="auth-footer">
+<p>Уже есть аккаунт? <a href="#" class="auth-link">Войти</a></p>
+</div>
+</div>
+</div>
+</div>
+<button class="theme-switch">
+<i class="ri-moon-line"></i>
+</button>
+<div class="language-selector">
+RU | EN
+</div>
+</body>
+</html>

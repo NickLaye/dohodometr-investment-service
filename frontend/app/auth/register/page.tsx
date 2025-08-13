@@ -65,8 +65,7 @@ export default function RegisterPage() {
       await register(
         formData.email,
         formData.password,
-        formData.firstName || undefined,
-        formData.lastName || undefined
+        `${formData.firstName} ${formData.lastName}`.trim()
       )
       // Успешная регистрация - перенаправление произойдет автоматически
     } catch (error) {

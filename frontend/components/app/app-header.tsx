@@ -1,151 +1,54 @@
 'use client'
 
-import { Bell, LogOut, Moon, Sun, User, Settings, Shield } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import React from 'react'
 import { useAuth } from '@/lib/auth/auth-context'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { MobileNavigation } from '@/components/mobile-navigation'
 
 export function AppHeader() {
   const { user, logout } = useAuth()
-  const { theme, setTheme } = useTheme()
-
-  const getUserInitials = (firstName?: string, lastName?: string, email?: string) => {
-    if (firstName && lastName) {
-      return `${firstName[0]}${lastName[0]}`.toUpperCase()
-    }
-    if (firstName) {
-      return firstName[0].toUpperCase()
-    }
-    if (email) {
-      return email[0].toUpperCase()
-    }
-    return 'U'
-  }
-
-  const handleLogout = async () => {
-    try {
-      await logout()
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-  }
 
   return (
-    <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-full items-center justify-between px-4 md:px-6">
-        {/* Левая часть - мобильное меню */}
-        <div className="flex items-center space-x-4">
-          <MobileNavigation />
-          {/* Здесь можно добавить хлебные крошки для десктопа */}
+    <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Добро пожаловать, {user?.name || 'Пользователь'}
+          </h1>
+          <p className="text-gray-600">
+            Управляйте своими инвестициями эффективно
+          </p>
         </div>
 
-        {/* Правая часть - действия пользователя */}
-        <div className="flex items-center space-x-2 md:space-x-4">
-          {/* Переключатель темы */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            aria-label={`Переключить на ${theme === 'dark' ? 'светлую' : 'темную'} тему`}
-            className="h-9 w-9"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Переключить тему</span>
-          </Button>
-
+        <div className="flex items-center gap-4">
           {/* Уведомления */}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            aria-label="Уведомления"
-            className="h-9 w-9 relative"
-          >
-            <Bell className="h-4 w-4" />
-            {/* Можно добавить индикатор непрочитанных уведомлений */}
-            {/* {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )} */}
-            <span className="sr-only">Уведомления</span>
-          </Button>
+          <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+          </button>
 
-          {/* Меню пользователя */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="relative h-9 w-9 rounded-full"
-                aria-label="Меню пользователя"
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    {getUserInitials(user?.first_name, user?.last_name, user?.email)}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {user?.first_name && user?.last_name
-                      ? `${user.first_name} ${user.last_name}`
-                      : user?.email
-                    }
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user?.email}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem asChild>
-                <a href="/app/profile" className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Профиль</span>
-                </a>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem asChild>
-                <a href="/app/settings" className="flex items-center">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Настройки</span>
-                </a>
-              </DropdownMenuItem>
-              
-              {user?.is_2fa_enabled && (
-                <DropdownMenuItem asChild>
-                  <a href="/app/settings/security" className="flex items-center">
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>2FA настройки</span>
-                  </a>
-                </DropdownMenuItem>
-              )}
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={handleLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Выйти</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Настройки */}
+          <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+            </svg>
+          </button>
+
+          {/* Профиль пользователя */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-medium">
+                {user?.name?.charAt(0) || 'U'}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+            >
+              Выйти
+            </Button>
+          </div>
         </div>
       </div>
     </header>
