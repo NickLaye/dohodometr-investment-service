@@ -103,10 +103,36 @@ exclude = [
     "RUF001", "RUF002", "RUF003",  # ambiguous unicode in RU texts
     "TRY200", "TRY300", "TRY301", "B904",  # exception chaining preferences
     "RET504", "PLW0127",  # style nits
-    "UP007"  # typing union modernisation not required
+    "UP007",  # typing union modernisation not required
+    "ARG001",  # unused args in endpoint signatures
+    "F841",    # assigned but unused temps in examples/branches
+    "C401"     # generator comprehension preferences
 ]
 "app/api/health.py" = [
     "S108", "PTH123", "PTH107", "ERA001", "E501", "TRY200", "B904"
+]
+"app/core/**" = [
+    "B008",   # FastAPI Depends in defaults (allow)
+    "N805",   # first arg name not self (pydantic validators/static methods)
+    "UP007",  # typing union modernisation not required
+    "RET503", "RET504", "RET505",  # return/else style nits
+    "TRY200", "TRY300", "TRY301",  # exception handling style
+    "B904",   # raise from preference
+    "E501",   # long lines in comments/docstrings
+    "RUF001", "RUF002", "RUF003",  # ambiguous unicode in RU text
+    "RUF013", # implicit Optional in annotations
+    "PLW0603",# global statement discouraged (allowed in small modules)
+    "SLF001", # private member access in internal modules
+    "ARG001"  # unused args in hooks/validators
+]
+"app/main.py" = [
+    "E402",   # module import not at top (startup ordering)
+    "C901",   # function complexity (app factory)
+    "E501",   # long lines in comments/docstrings
+    "RUF001", "RUF002", "RUF003",  # RU unicode in docstrings
+    "TRY300", # try/else preferences
+    "ARG001", # unused args in hooks
+    "RET505"  # else after return
 ]
 
 [tool.ruff.isort]
