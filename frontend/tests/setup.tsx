@@ -6,6 +6,7 @@
  * global test utilities.
  */
 
+import React from 'react'
 import '@testing-library/jest-dom';
 import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
