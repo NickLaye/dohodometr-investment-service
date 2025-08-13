@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from decimal import Decimal
 
 from app.core.security import get_current_user
-from app.core.database import get_db
+from app.core.database_sync import get_db
 from app.models.user import User
 from app.services.tax_calculator_rf import (
     TaxCalculatorRF, 
@@ -22,7 +22,7 @@ router = APIRouter()
 
 
 @router.get("/")
-async def tax_module_info():
+def tax_module_info():
     """Информация о налоговом модуле."""
     return {
         "module": "Tax Calculator RF",
@@ -102,7 +102,7 @@ class IISStrategyResponse(BaseModel):
 
 
 @router.post("/calculate", response_model=TaxCalculationResponse)
-async def calculate_taxes(
+def calculate_taxes(
     request: TaxCalculationRequest,
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
@@ -122,7 +122,7 @@ async def calculate_taxes(
     portfolios = []
     
     for portfolio_id in request.portfolio_ids:
-        portfolio = await portfolio_repo.get_by_id(portfolio_id)
+        portfolio = portfolio_repo.get_by_id(portfolio_id)
         
         if not portfolio:
             raise HTTPException(
@@ -144,7 +144,7 @@ async def calculate_taxes(
     
     all_transactions = []
     for portfolio in portfolios:
-        transactions = await transaction_repo.get_portfolio_transactions(
+        transactions = transaction_repo.get_portfolio_transactions(
             portfolio_id=portfolio.id,
             start_date=datetime(tax_year, 1, 1),
             end_date=datetime(tax_year, 12, 31, 23, 59, 59)
@@ -183,7 +183,7 @@ async def calculate_taxes(
 
 
 @router.post("/iis-strategy", response_model=IISStrategyResponse)
-async def calculate_iis_strategy(
+def calculate_iis_strategy(
     request: IISStrategyRequest,
     current_user: User = Depends(get_current_user)
 ):
@@ -213,7 +213,7 @@ async def calculate_iis_strategy(
 
 
 @router.get("/demo-calculation")
-async def demo_tax_calculation():
+def demo_tax_calculation():
     """
     Демонстрационный расчет налогов на примере типичного портфеля.
     
@@ -303,7 +303,7 @@ async def demo_tax_calculation():
 
 
 @router.get("/tax-deadlines")
-async def get_tax_deadlines():
+def get_tax_deadlines():
     """
     Получить важные налоговые даты и сроки для текущего года.
     """
@@ -326,7 +326,7 @@ async def get_tax_deadlines():
 
 
 @router.get("/tax-rates")
-async def get_current_tax_rates():
+def get_current_tax_rates():
     """
     Получить актуальные налоговые ставки и лимиты.
     """
@@ -359,7 +359,7 @@ async def get_current_tax_rates():
 
 
 @router.get("/health")
-async def health_check():
+def health_check():
     """Проверка работоспособности налогового модуля."""
     
     try:

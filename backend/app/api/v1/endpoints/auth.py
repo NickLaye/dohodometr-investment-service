@@ -7,10 +7,10 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import HTTPBearer
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database_sync import get_db
 from app.core.security import (
     create_access_token, 
     create_refresh_token,
@@ -39,9 +39,9 @@ security = HTTPBearer()
 
 
 @router.post("/register", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
-async def register(
+def register(
     user_data: UserRegister,
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ) -> Any:
     """
     Регистрация нового пользователя.
@@ -49,7 +49,7 @@ async def register(
     user_repo = UserRepository(db)
     
     # Проверяем, существует ли пользователь с таким email
-    existing_user = await user_repo.get_by_email(user_data.email)
+    existing_user = user_repo.get_by_email(user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -58,7 +58,7 @@ async def register(
     
     # Создаем нового пользователя
     try:
-        user = await user_repo.create(
+        user = user_repo.create(
             email=user_data.email,
             password=user_data.password,
             first_name=user_data.first_name,
@@ -82,9 +82,9 @@ async def register(
 
 
 @router.post("/login", response_model=Token)
-async def login(
+def login(
     user_credentials: UserLogin,
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ) -> Any:
     """
     Аутентификация пользователя и получение токенов.
@@ -92,7 +92,7 @@ async def login(
     user_repo = UserRepository(db)
     
     # Получаем пользователя по email
-    user = await user_repo.get_by_email(user_credentials.email)
+    user = user_repo.get_by_email(user_credentials.email)
     if not user:
         log_security_event(
             "login_failed",
@@ -106,7 +106,7 @@ async def login(
     
     # Проверяем пароль
     if not verify_password(user_credentials.password, user.password_hash):
-        await user_repo.increment_failed_login_attempts(user.id)
+        user_repo.increment_failed_login_attempts(user.id)
         log_security_event(
             "login_failed",
             user_id=user.id,
@@ -155,7 +155,7 @@ async def login(
     refresh_token = create_refresh_token(subject=user.id)
     
     # Обновляем информацию о входе
-    await user_repo.update_login_info(user.id)
+    user_repo.update_login_info(user.id)
     
     log_security_event(
         "login_successful",
@@ -171,9 +171,9 @@ async def login(
 
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(
+def refresh_token(
     refresh_token: str = Body(..., embed=True),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ) -> Any:
     """
     Обновление access токена с помощью refresh токена.
@@ -191,7 +191,7 @@ async def refresh_token(
         
         # Проверяем, существует ли пользователь
         user_repo = UserRepository(db)
-        user = await user_repo.get_by_id(int(user_id))
+        user = user_repo.get_by_id(int(user_id))
         
         if not user or not user.can_login():
             raise HTTPException(
@@ -218,9 +218,9 @@ async def refresh_token(
 
 
 @router.post("/2fa/setup", response_model=TwoFactorSetup)
-async def setup_2fa(
+def setup_2fa(
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ) -> Any:
     """
     Настройка двухфакторной аутентификации.
@@ -237,7 +237,7 @@ async def setup_2fa(
     
     # Сохраняем секрет (временно, до подтверждения)
     user_repo = UserRepository(db)
-    await user_repo.set_temp_2fa_secret(current_user.id, secret)
+    user_repo.set_temp_2fa_secret(current_user.id, secret)
     
     return TwoFactorSetup(
         secret=secret,
@@ -247,10 +247,10 @@ async def setup_2fa(
 
 
 @router.post("/2fa/verify")
-async def verify_2fa(
+def verify_2fa(
     verification: TwoFactorVerify,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ) -> Any:
     """
     Подтверждение настройки двухфакторной аутентификации.
@@ -258,7 +258,7 @@ async def verify_2fa(
     user_repo = UserRepository(db)
     
     # Получаем временный секрет
-    temp_secret = await user_repo.get_temp_2fa_secret(current_user.id)
+    temp_secret = user_repo.get_temp_2fa_secret(current_user.id)
     if not temp_secret:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -273,7 +273,7 @@ async def verify_2fa(
         )
     
     # Активируем 2FA
-    backup_codes = await user_repo.enable_2fa(current_user.id, temp_secret)
+    backup_codes = user_repo.enable_2fa(current_user.id, temp_secret)
     
     log_security_event(
         "2fa_enabled",
@@ -284,10 +284,10 @@ async def verify_2fa(
 
 
 @router.post("/2fa/disable")
-async def disable_2fa(
+def disable_2fa(
     verification: TwoFactorVerify,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ) -> Any:
     """
     Отключение двухфакторной аутентификации.
@@ -307,7 +307,7 @@ async def disable_2fa(
     
     # Отключаем 2FA
     user_repo = UserRepository(db)
-    await user_repo.disable_2fa(current_user.id)
+    user_repo.disable_2fa(current_user.id)
     
     log_security_event(
         "2fa_disabled",
@@ -318,7 +318,7 @@ async def disable_2fa(
 
 
 @router.get("/me", response_model=UserSchema)
-async def get_current_user_info(
+def get_current_user_info(
     current_user: User = Depends(get_current_user)
 ) -> Any:
     """
@@ -328,7 +328,7 @@ async def get_current_user_info(
 
 
 @router.post("/logout")
-async def logout(
+def logout(
     current_user: User = Depends(get_current_user)
 ) -> Any:
     """

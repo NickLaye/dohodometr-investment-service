@@ -2,11 +2,11 @@
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.core.security import get_current_user
-from app.core.database import get_db
+from app.core.database_sync import get_db
 from app.models.user import User
 from app.repositories.portfolio import PortfolioRepository
 from app.services.portfolio_analytics import PortfolioAnalyticsService
@@ -44,13 +44,13 @@ class PortfolioResponse(BaseModel):
 
 
 @router.get("/", response_model=List[PortfolioResponse])
-async def get_portfolios(
+def get_portfolios(
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение списка портфелей пользователя."""
     portfolio_repo = PortfolioRepository(db)
-    portfolios = await portfolio_repo.get_user_portfolios(current_user.id)
+    portfolios = portfolio_repo.get_user_portfolios(current_user.id)
     
     return [
         PortfolioResponse(
@@ -71,15 +71,15 @@ async def get_portfolios(
 
 
 @router.post("/", response_model=PortfolioResponse, status_code=status.HTTP_201_CREATED)
-async def create_portfolio(
+def create_portfolio(
     portfolio_data: PortfolioCreate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Создание нового портфеля."""
     portfolio_repo = PortfolioRepository(db)
     
-    portfolio = await portfolio_repo.create(
+    portfolio = portfolio_repo.create(
         owner_id=current_user.id,
         name=portfolio_data.name,
         description=portfolio_data.description,
@@ -102,14 +102,14 @@ async def create_portfolio(
 
 
 @router.get("/{portfolio_id}")
-async def get_portfolio(
+def get_portfolio(
     portfolio_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение портфеля по ID."""
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    portfolio = portfolio_repo.get_by_id(portfolio_id)
     
     if not portfolio:
         raise HTTPException(
@@ -139,15 +139,15 @@ async def get_portfolio(
 
 
 @router.put("/{portfolio_id}")
-async def update_portfolio(
+def update_portfolio(
     portfolio_id: int,
     portfolio_data: PortfolioUpdate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Обновление портфеля."""
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    portfolio = portfolio_repo.get_by_id(portfolio_id)
     
     if not portfolio:
         raise HTTPException(
@@ -181,14 +181,14 @@ async def update_portfolio(
 
 
 @router.delete("/{portfolio_id}")
-async def delete_portfolio(
+def delete_portfolio(
     portfolio_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Мягкое удаление портфеля."""
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    portfolio = portfolio_repo.get_by_id(portfolio_id)
     
     if not portfolio:
         raise HTTPException(
@@ -214,16 +214,16 @@ async def delete_portfolio(
 
 
 @router.get("/{portfolio_id}/summary")
-async def get_portfolio_summary(
+def get_portfolio_summary(
     portfolio_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Получение детальной сводки по портфелю."""
     portfolio_repo = PortfolioRepository(db)
     
     # Проверяем доступ
-    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    portfolio = portfolio_repo.get_by_id(portfolio_id)
     if not portfolio:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
