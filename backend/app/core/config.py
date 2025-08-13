@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     
     # Шифрование для чувствительных данных
     ENCRYPTION_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    ENCRYPTION_SALT: str = Field(
+        default_factory=lambda: secrets.token_urlsafe(32),
+        description="Cryptographic salt for data encryption (required)"
+    )
     
     # Пароли
     PASSWORD_MIN_LENGTH: int = 8
@@ -79,7 +83,11 @@ class Settings(BaseSettings):
     DATABASE_PORT: int = 5432
     DATABASE_NAME: str = "investment_db"
     DATABASE_USER: str = "postgres"
-    DATABASE_PASSWORD: str = "password"
+    DATABASE_PASSWORD: str = Field(
+        default="postgres_dev_only",  
+        description="Database password (MUST be changed in production)",
+        min_length=12
+    )
     DATABASE_ECHO: bool = False
     DATABASE_URL: Optional[PostgresDsn] = None
     
@@ -145,7 +153,11 @@ class Settings(BaseSettings):
     
     # MinIO / S3
     MINIO_ENDPOINT: str = "localhost:9000"
-    MINIO_ACCESS_KEY: str = "admin"
+    MINIO_ACCESS_KEY: str = Field(
+        default="minio_dev_access_key",
+        description="MinIO access key (MUST be changed in production)",
+        min_length=8
+    )
     MINIO_SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     MINIO_BUCKET_NAME: str = "investment-files"
     MINIO_SECURE: bool = False
@@ -249,5 +261,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS
 if settings.ENVIRONMENT == "production":
     assert settings.SECRET_KEY != "changeme", "Установите надежный SECRET_KEY для production"
     assert settings.JWT_SECRET_KEY != "changeme", "Установите надежный JWT_SECRET_KEY для production"
-    assert settings.DATABASE_PASSWORD != "password", "Установите надежный пароль базы данных для production"
+    assert settings.DATABASE_PASSWORD not in ["password", "postgres_dev_only"], "Установите надежный пароль базы данных для production"
+    assert settings.MINIO_ACCESS_KEY not in ["admin", "minio_dev_only", "minio_dev_access_key"], "Установите надежный MINIO_ACCESS_KEY для production"
+    assert len(settings.ENCRYPTION_SALT) >= 32, "ENCRYPTION_SALT должен быть не менее 32 символов для production"
     assert not settings.DEBUG, "Отключите DEBUG режим для production"

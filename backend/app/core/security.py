@@ -45,10 +45,18 @@ security = HTTPBearer()
 def get_encryption_key() -> bytes:
     """Получение ключа шифрования из настроек."""
     key = settings.ENCRYPTION_KEY.encode()
+    
+    # Проверяем наличие соли в переменных окружения
+    if not settings.ENCRYPTION_SALT:
+        logger.error("ENCRYPTION_SALT не установлен в production")
+        raise ValueError("ENCRYPTION_SALT must be set in environment variables")
+    
+    salt = settings.ENCRYPTION_SALT.encode()
+    
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
-        salt=b'investment_service_salt',  # В продакшене используйте случайную соль
+        salt=salt,
         iterations=100000,
     )
     return base64.urlsafe_b64encode(kdf.derive(key))
@@ -186,10 +194,12 @@ def create_refresh_token(subject: Union[str, Any]) -> str:
 def verify_token(token: str, token_type: str = "access") -> dict:
     """Проверка и декодирование JWT токена."""
     try:
+        # Строгая проверка алгоритма для предотвращения algorithm confusion
         payload = jwt.decode(
             token,
             settings.JWT_SECRET_KEY,
-            algorithms=[settings.JWT_ALGORITHM]
+            algorithms=["HS512"],  # Строго фиксированный алгоритм
+            options={"verify_signature": True, "verify_exp": True, "verify_iat": True}
         )
         
         # Проверяем тип токена
@@ -285,11 +295,20 @@ def get_current_user(
     # Проверяем токен
     payload = verify_token(credentials.credentials, "access")
     user_id = payload.get("sub")
+    jti = payload.get("jti")  # JWT ID для проверки revocation
     
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Не удалось валидировать учетные данные",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Проверяем, не отозван ли токен (если blacklist инициализирован)
+    if token_blacklist and jti and token_blacklist.is_token_blacklisted(jti):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Токен был отозван",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -315,7 +334,7 @@ def get_current_user(
     log_security_event(
         "user_access",
         user_id=user.id,
-        details={"endpoint": "protected_resource"}
+        details={"endpoint": "protected_resource", "token_jti": jti}
     )
     
     return user
@@ -346,18 +365,39 @@ def generate_numeric_code(length: int = 6) -> str:
 
 # Функции для работы с сессиями и блеклистом токенов
 class TokenBlacklist:
-    """Управление черным списком токенов."""
+    """Управление черным списком токенов (sync version согласно QUICK_RULES.md)."""
     
     def __init__(self, redis_client):
         self.redis = redis_client
     
-    async def add_token(self, jti: str, exp: datetime):
+    def add_token(self, jti: str, exp: datetime):
         """Добавление токена в черный список."""
         ttl = int((exp - datetime.utcnow()).total_seconds())
         if ttl > 0:
-            await self.redis.setex(f"blacklist:{jti}", ttl, "1")
+            self.redis.setex(f"blacklist:{jti}", ttl, "1")
     
-    async def is_token_blacklisted(self, jti: str) -> bool:
+    def is_token_blacklisted(self, jti: str) -> bool:
         """Проверка, находится ли токен в черном списке."""
-        result = await self.redis.get(f"blacklist:{jti}")
-        return result is not None
+        try:
+            result = self.redis.get(f"blacklist:{jti}")
+            return result is not None
+        except Exception as e:
+            logger.error(f"Ошибка проверки blacklist токена: {e}")
+            return False  # Fail open для availability
+
+
+# Глобальный экземпляр blacklist (будет инициализирован в main.py)
+token_blacklist: Optional[TokenBlacklist] = None
+
+
+def init_token_blacklist(redis_client) -> None:
+    """Инициализация глобального экземпляра TokenBlacklist."""
+    global token_blacklist
+    token_blacklist = TokenBlacklist(redis_client)
+
+
+def logout_user(jti: str, exp: datetime) -> None:
+    """Добавление токена в blacklist при logout."""
+    if token_blacklist:
+        token_blacklist.add_token(jti, exp)
+        logger.info(f"Token {jti[:8]}... добавлен в blacklist")

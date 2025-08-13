@@ -6,7 +6,7 @@ from datetime import timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status, Body
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -215,6 +215,40 @@ def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Недействительный токен"
         )
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Выход пользователя из системы (добавление токена в blacklist).
+    """
+    from app.core.security import logout_user, verify_token
+    from datetime import datetime
+    
+    try:
+        # Парсим токен для получения JTI и exp
+        payload = verify_token(credentials.credentials, "access")
+        jti = payload.get("jti")
+        exp_timestamp = payload.get("exp")
+        
+        if jti and exp_timestamp:
+            exp_datetime = datetime.fromtimestamp(exp_timestamp)
+            logout_user(jti, exp_datetime)
+            
+            log_security_event(
+                "user_logout",
+                user_id=current_user.id,
+                details={"token_jti": jti}
+            )
+        
+        return {"message": "Успешный выход из системы"}
+        
+    except Exception as e:
+        logger.error(f"Ошибка при выходе пользователя: {e}")
+        return {"message": "Выход из системы завершен"}  # Always succeed for UX
 
 
 @router.post("/2fa/setup", response_model=TwoFactorSetup)
