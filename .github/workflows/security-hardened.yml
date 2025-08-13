@@ -151,13 +151,13 @@ jobs:
           cd backend
           pip install -r requirements.txt
 
-      - name: Python Security Audit with pip-audit
+      - name: Python Security Audit with pip-audit (non-blocking)
         run: |
           cd backend
           pip-audit --format=json --output=pip-audit-report.json
         continue-on-error: true
 
-      - name: Python Security Check with Safety
+      - name: Python Security Check with Safety (non-blocking)
         run: |
           cd backend
           safety check --json --output safety-report.json
@@ -181,10 +181,10 @@ jobs:
           cd frontend
           npm ci
 
-      - name: Node.js Security Audit
+      - name: Node.js Security Audit (non-blocking)
         run: |
           cd frontend
-          npm audit --audit-level=moderate --json > npm-audit-report.json
+          npm audit --audit-level=moderate --json > npm-audit-report.json || true
         continue-on-error: true
 
       - name: Upload security reports
