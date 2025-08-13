@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
+import React from 'react'
 import { Header } from '@/components/layout/header'
 import { HeroSection } from '@/components/sections/hero-section'
 import { BenefitsSection } from '@/components/sections/benefits-section'

@@ -16,7 +16,6 @@ import {
   TrendingUp,
   Upload,
   Wallet,
-  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -111,7 +110,7 @@ function MobileNavItem({ item, onItemClick }: MobileNavItemProps) {
     <div className="space-y-1">
       <Link
         href={item.href}
-        onClick={onItemClick}
+        {...(onItemClick && { onClick: onItemClick })}
         className={cn(
           'flex items-center space-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
           isActive
@@ -137,7 +136,7 @@ function MobileNavItem({ item, onItemClick }: MobileNavItemProps) {
               <Link
                 key={child.href}
                 href={child.href}
-                onClick={onItemClick}
+                {...(onItemClick && { onClick: onItemClick })}
                 className={cn(
                   'flex items-center space-x-2 rounded-md px-2 py-1.5 text-sm transition-colors',
                   isChildActive

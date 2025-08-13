@@ -3,9 +3,10 @@
  * Тесты основных путей взаимодействия пользователя
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import React, { useState } from 'react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import userEvent from '@testing-library/user-event'
 
 // Mock компоненты для тестирования
@@ -457,5 +458,4 @@ describe('Critical User Journeys', () => {
   })
 })
 
-// Импорты React (должны быть в начале файла в реальном коде)
-import { useState } from 'react'
+// Все импорты уже в начале файла

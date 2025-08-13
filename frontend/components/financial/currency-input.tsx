@@ -16,7 +16,6 @@ interface CurrencyInputProps {
   id?: string
   min?: number
   max?: number
-  step?: number
   error?: string
   required?: boolean
 }
@@ -32,7 +31,6 @@ export function CurrencyInput({
   id,
   min = 0,
   max,
-  step = 0.01,
   error,
   required = false
 }: CurrencyInputProps) {

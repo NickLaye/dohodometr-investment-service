@@ -5,12 +5,12 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 interface PnLIndicatorProps {
   value: number
-  percentage?: number
-  showArrow?: boolean
-  showSign?: boolean
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
-  currency?: string
+  percentage?: number | undefined
+  showArrow?: boolean | undefined
+  showSign?: boolean | undefined
+  size?: 'sm' | 'md' | 'lg' | undefined
+  className?: string | undefined
+  currency?: string | undefined
 }
 
 export function PnLIndicator({

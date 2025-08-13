@@ -17,7 +17,7 @@ interface HealthCheck {
   response_time_ms: number;
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse<HealthCheck>> {
+export async function GET(_request: NextRequest): Promise<NextResponse<HealthCheck>> {
   const startTime = Date.now();
   
   const healthStatus: HealthCheck = {

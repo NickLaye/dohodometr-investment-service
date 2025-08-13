@@ -46,7 +46,7 @@ export function MobileTable({
 }: MobileTableProps) {
   const highPriorityColumns = columns.filter(col => col.priority === 'high' || !col.priority)
   const mediumPriorityColumns = columns.filter(col => col.priority === 'medium')
-  const lowPriorityColumns = columns.filter(col => col.priority === 'low')
+  // lowPriorityColumns не используются в текущем интерфейсе
 
   if (data.length === 0) {
     return (

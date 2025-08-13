@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { X, ArrowRight, ArrowLeft, Sparkles, Target, PieChart, TrendingUp } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Sparkles, Target, PieChart, TrendingUp, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface WelcomeTourProps {
@@ -209,7 +209,7 @@ export function WelcomeTour({ isOpen, onClose, onComplete }: WelcomeTourProps) {
   const currentStepData = tourSteps[currentStep]
   const progress = ((currentStep + 1) / tourSteps.length) * 100
 
-  if (!isOpen) return null
+  if (!isOpen || !currentStepData) return null
 
   return (
     <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
