@@ -143,8 +143,8 @@ docker-compose down && docker-compose up -d
 ## 🎯 **ДОСТУПНЫЕ URL ПОСЛЕ РАЗВЕРТЫВАНИЯ**
 
 - **🏠 Основной сайт:** https://dohodometr.ru
-- **🛠️ Traefik панель:** https://traefik.dohodometr.ru (admin:dohodometr2025)
-- **📊 Мониторинг:** https://uptime.dohodometr.ru (admin:dohodometr2025)
+- **🛠️ Traefik панель:** https://traefik.dohodometr.ru (admin:SECURE_PASSWORD)
+- **📊 Мониторинг:** https://uptime.dohodometr.ru (admin:SECURE_PASSWORD)
 
 ---
 

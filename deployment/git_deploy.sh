@@ -185,12 +185,12 @@ Application:
 Traefik Dashboard:
   URL: https://traefik.dohodometr.ru
   Пользователь: admin
-  Пароль: dohodometr2025
+  Пароль: SECURE_RANDOM_PASSWORD_CHANGE_ME
 
 Uptime Monitoring:
   URL: https://uptime.dohodometr.ru
   Пользователь: admin
-  Пароль: dohodometr2025
+  Пароль: SECURE_RANDOM_PASSWORD_CHANGE_ME
 
 УДАЛИТЕ ЭТОТ ФАЙЛ ПОСЛЕ СОХРАНЕНИЯ ПАРОЛЕЙ!
 EOF

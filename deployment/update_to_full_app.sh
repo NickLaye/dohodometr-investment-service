@@ -131,7 +131,7 @@ services:
       - "traefik.http.routers.traefik-dashboard.middlewares=traefik-auth"
       
       # Базовая аутентификация для Traefik Dashboard
-      # Пользователь: admin, Пароль: dohodometr2025
+      # Базовая аутентификация (СМЕНИТЕ ПАРОЛЬ!)
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$2y$$10$$X8/8Z5FxJ6v2E8K4vP9zLOQ8xF7h9D6gC5b1A3e2B9f8G7h6I5j4K3l2"
       
       # Security Headers
@@ -151,8 +151,8 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-changeme123}@postgres:5432/${POSTGRES_DB:-dohodometr}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme456}@redis:6379/0
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dohodometr}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-change_this_secret_key_in_production}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change_this_jwt_secret_key_in_production}
       - ENVIRONMENT=production
@@ -240,7 +240,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dohodometr}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -258,13 +258,13 @@ services:
     image: redis:7-alpine
     container_name: dohodometr-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme456}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     networks:
       - dohodometr-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-changeme456}", "ping"]
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
