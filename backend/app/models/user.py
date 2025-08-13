@@ -11,7 +11,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from app.core.database import Base
+from app.core.database_sync import Base
 
 
 class User(Base):

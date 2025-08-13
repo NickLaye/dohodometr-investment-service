@@ -70,7 +70,7 @@ async def get_transactions(
         # Проверяем доступ к счету через портфель
         from app.repositories.account import AccountRepository
         account_repo = AccountRepository(db)
-        account = await account_repo.get_by_id(account_id)
+        account = account_repo.get_by_id(account_id)
         
         if not account:
             raise HTTPException(
@@ -80,7 +80,7 @@ async def get_transactions(
         
         # Проверяем, что счет принадлежит пользователю
         portfolio_repo = PortfolioRepository(db)
-        portfolio = await portfolio_repo.get_by_id(account.portfolio_id)
+        portfolio = portfolio_repo.get_by_id(account.portfolio_id)
         
         if not portfolio or portfolio.owner_id != current_user.id:
             raise HTTPException(
@@ -90,7 +90,7 @@ async def get_transactions(
         
         # Получаем транзакции счета
         transaction_types = [transaction_type] if transaction_type else None
-        transactions = await transaction_repo.get_account_transactions(
+        transactions = transaction_repo.get_account_transactions(
             account_id=account_id,
             start_date=start_date,
             end_date=end_date,
@@ -102,7 +102,7 @@ async def get_transactions(
     elif portfolio_id:
         # Проверяем доступ к портфелю
         portfolio_repo = PortfolioRepository(db)
-        portfolio = await portfolio_repo.get_by_id(portfolio_id)
+        portfolio = portfolio_repo.get_by_id(portfolio_id)
         
         if not portfolio:
             raise HTTPException(
@@ -117,7 +117,7 @@ async def get_transactions(
             )
         
         # Получаем транзакции портфеля
-        transactions = await transaction_repo.get_portfolio_transactions(
+        transactions = transaction_repo.get_portfolio_transactions(
             portfolio_id=portfolio_id,
             start_date=start_date,
             end_date=end_date
@@ -159,7 +159,7 @@ async def create_transaction(
     # Проверяем доступ к счету
     from app.repositories.account import AccountRepository
     account_repo = AccountRepository(db)
-    account = await account_repo.get_by_id(transaction_data.account_id)
+    account = account_repo.get_by_id(transaction_data.account_id)
     
     if not account:
         raise HTTPException(
@@ -179,7 +179,7 @@ async def create_transaction(
     
     # Создаем транзакцию
     transaction_repo = TransactionRepository(db)
-    transaction = await transaction_repo.create(
+    transaction = transaction_repo.create(
         account_id=transaction_data.account_id,
         instrument_id=transaction_data.instrument_id,
         ts=transaction_data.ts,
@@ -226,14 +226,14 @@ async def bulk_create_transactions(
     portfolio_repo = PortfolioRepository(db)
     
     for account_id in account_ids:
-        account = await account_repo.get_by_id(account_id)
+        account = account_repo.get_by_id(account_id)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Счет {account_id} не найден"
             )
         
-        portfolio = await portfolio_repo.get_by_id(account.portfolio_id)
+        portfolio = portfolio_repo.get_by_id(account.portfolio_id)
         if not portfolio or portfolio.owner_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -244,7 +244,7 @@ async def bulk_create_transactions(
     transaction_repo = TransactionRepository(db)
     transactions_dict_data = [t.dict() for t in transactions_data]
     
-    transactions = await transaction_repo.bulk_create(transactions_dict_data)
+    transactions = transaction_repo.bulk_create(transactions_dict_data)
     
     return {
         "message": f"Создано {len(transactions)} транзакций",
@@ -265,7 +265,7 @@ async def import_csv(
     # Проверяем доступ к счету
     from app.repositories.account import AccountRepository
     account_repo = AccountRepository(db)
-    account = await account_repo.get_by_id(account_id)
+    account = account_repo.get_by_id(account_id)
     
     if not account:
         raise HTTPException(
@@ -349,7 +349,7 @@ async def get_transaction(
 ):
     """Получение транзакции по ID."""
     transaction_repo = TransactionRepository(db)
-    transaction = await transaction_repo.get_by_id(transaction_id)
+    transaction = transaction_repo.get_by_id(transaction_id)
     
     if not transaction:
         raise HTTPException(
@@ -360,7 +360,7 @@ async def get_transaction(
     # Проверяем доступ через счет и портфель
     from app.repositories.account import AccountRepository
     account_repo = AccountRepository(db)
-    account = await account_repo.get_by_id(transaction.account_id)
+    account = account_repo.get_by_id(transaction.account_id)
     
     if not account:
         raise HTTPException(
@@ -402,7 +402,7 @@ async def delete_transaction(
 ):
     """Удаление транзакции."""
     transaction_repo = TransactionRepository(db)
-    transaction = await transaction_repo.get_by_id(transaction_id)
+    transaction = transaction_repo.get_by_id(transaction_id)
     
     if not transaction:
         raise HTTPException(
@@ -413,7 +413,7 @@ async def delete_transaction(
     # Проверяем доступ
     from app.repositories.account import AccountRepository
     account_repo = AccountRepository(db)
-    account = await account_repo.get_by_id(transaction.account_id)
+    account = account_repo.get_by_id(transaction.account_id)
     
     if not account:
         raise HTTPException(
@@ -431,7 +431,7 @@ async def delete_transaction(
         )
     
     # Удаляем транзакцию
-    success = await transaction_repo.delete(transaction_id)
+    success = transaction_repo.delete(transaction_id)
     
     if not success:
         raise HTTPException(

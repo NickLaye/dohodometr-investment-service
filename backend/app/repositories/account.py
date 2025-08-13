@@ -5,9 +5,8 @@
 from typing import List, Optional, Dict, Any
 from decimal import Decimal
 from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, update, delete, and_, func
-from sqlalchemy.orm import selectinload
 
 from app.models.account import Account, AccountType
 from app.core.logging import logger
@@ -16,10 +15,10 @@ from app.core.logging import logger
 class AccountRepository:
     """Репозиторий для работы со счетами."""
     
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.db = db
     
-    async def create(
+    def create(
         self,
         portfolio_id: int,
         name: str,
@@ -44,34 +43,34 @@ class AccountRepository:
             )
             
             self.db.add(account)
-            await self.db.commit()
-            await self.db.refresh(account)
+            self.db.commit()
+            self.db.refresh(account)
             
             logger.info(f"Создан счет: {account.name} для портфеля {portfolio_id}")
             return account
             
         except Exception as e:
-            await self.db.rollback()
+            self.db.rollback()
             logger.error(f"Ошибка создания счета {name}: {e}")
             raise
     
-    async def get_by_id(self, account_id: int) -> Optional[Account]:
+    def get_by_id(self, account_id: int) -> Optional[Account]:
         """Получение счета по ID."""
         stmt = select(Account).where(Account.id == account_id)
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def get_by_id_with_holdings(self, account_id: int) -> Optional[Account]:
+    def get_by_id_with_holdings(self, account_id: int) -> Optional[Account]:
         """Получение счета с загруженными холдингами."""
         stmt = (
             select(Account)
             .options(selectinload(Account.holdings))
             .where(Account.id == account_id)
         )
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def get_portfolio_accounts(
+    def get_portfolio_accounts(
         self,
         portfolio_id: int,
         is_active: bool = True
@@ -84,46 +83,46 @@ class AccountRepository:
         
         stmt = stmt.order_by(Account.created_at.asc())
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()
     
-    async def update(self, account_id: int, **kwargs) -> Optional[Account]:
+    def update(self, account_id: int, **kwargs) -> Optional[Account]:
         """Обновление счета."""
         # Исключаем поля, которые нельзя обновлять напрямую
         excluded_fields = {'id', 'portfolio_id', 'created_at', 'total_value', 'cash_balance'}
         update_data = {k: v for k, v in kwargs.items() if k not in excluded_fields}
         
         if not update_data:
-            return await self.get_by_id(account_id)
+            return self.get_by_id(account_id)
         
         update_data['updated_at'] = datetime.utcnow()
         
         stmt = update(Account).where(Account.id == account_id).values(**update_data)
-        await self.db.execute(stmt)
-        await self.db.commit()
+        self.db.execute(stmt)
+        self.db.commit()
         
-        return await self.get_by_id(account_id)
+        return self.get_by_id(account_id)
     
-    async def delete(self, account_id: int) -> bool:
+    def delete(self, account_id: int) -> bool:
         """Мягкое удаление счета."""
         stmt = update(Account).where(Account.id == account_id).values(
             is_active=False,
             updated_at=datetime.utcnow()
         )
-        result = await self.db.execute(stmt)
-        await self.db.commit()
+        result = self.db.execute(stmt)
+        self.db.commit()
         
         return result.rowcount > 0
     
-    async def hard_delete(self, account_id: int) -> bool:
+    def hard_delete(self, account_id: int) -> bool:
         """Жесткое удаление счета (для GDPR)."""
         stmt = delete(Account).where(Account.id == account_id)
-        result = await self.db.execute(stmt)
-        await self.db.commit()
+        result = self.db.execute(stmt)
+        self.db.commit()
         
         return result.rowcount > 0
     
-    async def update_totals(
+    def update_totals(
         self,
         account_id: int,
         total_value: Decimal,
@@ -135,12 +134,12 @@ class AccountRepository:
             cash_balance=cash_balance,
             updated_at=datetime.utcnow()
         )
-        await self.db.execute(stmt)
-        await self.db.commit()
+        self.db.execute(stmt)
+        self.db.commit()
     
-    async def get_account_summary(self, account_id: int) -> Dict[str, Any]:
+    def get_account_summary(self, account_id: int) -> Dict[str, Any]:
         """Получение сводки по счету."""
-        account = await self.get_by_id(account_id)
+        account = self.get_by_id(account_id)
         if not account:
             return {}
         
@@ -150,7 +149,7 @@ class AccountRepository:
             select(func.count(Holding.id))
             .where(Holding.account_id == account_id)
         )
-        holdings_count_result = await self.db.execute(holdings_count_stmt)
+        holdings_count_result = self.db.execute(holdings_count_stmt)
         holdings_count = holdings_count_result.scalar() or 0
         
         # Получаем общую стоимость холдингов
@@ -158,7 +157,7 @@ class AccountRepository:
             select(func.coalesce(func.sum(Holding.quantity * Holding.avg_price), 0))
             .where(Holding.account_id == account_id)
         )
-        holdings_value_result = await self.db.execute(holdings_value_stmt)
+        holdings_value_result = self.db.execute(holdings_value_stmt)
         holdings_value = holdings_value_result.scalar() or Decimal('0')
         
         return {
@@ -176,7 +175,7 @@ class AccountRepository:
             'updated_at': account.updated_at.isoformat()
         }
     
-    async def search_accounts(
+    def search_accounts(
         self,
         portfolio_id: int,
         query: str,
@@ -196,10 +195,10 @@ class AccountRepository:
             .limit(limit)
         )
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()
     
-    async def get_accounts_by_broker(self, broker: str) -> List[Account]:
+    def get_accounts_by_broker(self, broker: str) -> List[Account]:
         """Получение счетов по брокеру."""
         stmt = (
             select(Account)
@@ -212,5 +211,5 @@ class AccountRepository:
             .order_by(Account.created_at.desc())
         )
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()

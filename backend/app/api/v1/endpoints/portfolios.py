@@ -163,7 +163,7 @@ def update_portfolio(
     
     # Обновляем только заданные поля
     update_data = portfolio_data.dict(exclude_unset=True)
-    portfolio = await portfolio_repo.update(portfolio_id, **update_data)
+    portfolio = portfolio_repo.update(portfolio_id, **update_data)
     
     return PortfolioResponse(
         id=portfolio.id,
@@ -202,7 +202,7 @@ def delete_portfolio(
             detail="Нет доступа к этому портфелю"
         )
     
-    success = await portfolio_repo.delete(portfolio_id)
+    success = portfolio_repo.delete(portfolio_id)
     
     if not success:
         raise HTTPException(
@@ -237,6 +237,6 @@ def get_portfolio_summary(
         )
     
     # Получаем детальную сводку
-    summary = await portfolio_repo.get_portfolio_summary(portfolio_id)
+    summary = portfolio_repo.get_portfolio_summary(portfolio_id)
     
     return summary

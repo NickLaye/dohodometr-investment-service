@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 import enum
 
-from app.core.database import Base
+from app.core.database_sync import Base
 
 
 class AccountType(str, enum.Enum):

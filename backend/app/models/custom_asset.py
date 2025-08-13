@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 import uuid
 
-from ..core.database import Base
+from ..core.database_sync import Base
 
 
 class CustomAssetType(str, Enum):

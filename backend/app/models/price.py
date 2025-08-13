@@ -5,7 +5,7 @@ from decimal import Decimal
 from sqlalchemy import Integer, DateTime, DECIMAL, ForeignKey, String, Index
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base
+from app.core.database_sync import Base
 
 
 class Price(Base):

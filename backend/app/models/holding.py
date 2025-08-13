@@ -9,7 +9,7 @@ from sqlalchemy import Integer, DECIMAL, ForeignKey, DateTime, Index, CheckConst
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from app.core.database import Base
+from app.core.database_sync import Base
 
 
 class Holding(Base):

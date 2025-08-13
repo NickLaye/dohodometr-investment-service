@@ -5,9 +5,8 @@
 from typing import List, Optional, Dict, Any
 from decimal import Decimal
 from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, update, delete, and_, func
-from sqlalchemy.orm import selectinload
 
 from app.models.portfolio import Portfolio, PortfolioSnapshot
 from app.models.account import Account
@@ -17,10 +16,10 @@ from app.core.logging import logger
 class PortfolioRepository:
     """Репозиторий для работы с портфелями."""
     
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.db = db
     
-    async def create(
+    def create(
         self,
         owner_id: int,
         name: str,
@@ -39,34 +38,34 @@ class PortfolioRepository:
             )
             
             self.db.add(portfolio)
-            await self.db.commit()
-            await self.db.refresh(portfolio)
+            self.db.commit()
+            self.db.refresh(portfolio)
             
             logger.info(f"Создан портфель: {portfolio.name} для пользователя {owner_id}")
             return portfolio
             
         except Exception as e:
-            await self.db.rollback()
+            self.db.rollback()
             logger.error(f"Ошибка создания портфеля {name}: {e}")
             raise
     
-    async def get_by_id(self, portfolio_id: int) -> Optional[Portfolio]:
+    def get_by_id(self, portfolio_id: int) -> Optional[Portfolio]:
         """Получение портфеля по ID."""
         stmt = select(Portfolio).where(Portfolio.id == portfolio_id)
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def get_by_id_with_accounts(self, portfolio_id: int) -> Optional[Portfolio]:
+    def get_by_id_with_accounts(self, portfolio_id: int) -> Optional[Portfolio]:
         """Получение портфеля с загруженными счетами."""
         stmt = (
             select(Portfolio)
             .options(selectinload(Portfolio.accounts))
             .where(Portfolio.id == portfolio_id)
         )
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def get_user_portfolios(
+    def get_user_portfolios(
         self,
         user_id: int,
         is_active: bool = True,
@@ -81,46 +80,46 @@ class PortfolioRepository:
         
         stmt = stmt.order_by(Portfolio.created_at.desc()).offset(offset).limit(limit)
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()
     
-    async def update(self, portfolio_id: int, **kwargs) -> Optional[Portfolio]:
+    def update(self, portfolio_id: int, **kwargs) -> Optional[Portfolio]:
         """Обновление портфеля."""
         # Исключаем поля, которые нельзя обновлять напрямую
         excluded_fields = {'id', 'owner_id', 'created_at', 'total_value', 'total_cost', 'total_pnl'}
         update_data = {k: v for k, v in kwargs.items() if k not in excluded_fields}
         
         if not update_data:
-            return await self.get_by_id(portfolio_id)
+            return self.get_by_id(portfolio_id)
         
         update_data['updated_at'] = datetime.utcnow()
         
         stmt = update(Portfolio).where(Portfolio.id == portfolio_id).values(**update_data)
-        await self.db.execute(stmt)
-        await self.db.commit()
+        self.db.execute(stmt)
+        self.db.commit()
         
-        return await self.get_by_id(portfolio_id)
+        return self.get_by_id(portfolio_id)
     
-    async def delete(self, portfolio_id: int) -> bool:
+    def delete(self, portfolio_id: int) -> bool:
         """Мягкое удаление портфеля."""
         stmt = update(Portfolio).where(Portfolio.id == portfolio_id).values(
             is_active=False,
             updated_at=datetime.utcnow()
         )
-        result = await self.db.execute(stmt)
-        await self.db.commit()
+        result = self.db.execute(stmt)
+        self.db.commit()
         
         return result.rowcount > 0
     
-    async def hard_delete(self, portfolio_id: int) -> bool:
+    def hard_delete(self, portfolio_id: int) -> bool:
         """Жесткое удаление портфеля (для GDPR)."""
         stmt = delete(Portfolio).where(Portfolio.id == portfolio_id)
-        result = await self.db.execute(stmt)
-        await self.db.commit()
+        result = self.db.execute(stmt)
+        self.db.commit()
         
         return result.rowcount > 0
     
-    async def update_metrics(
+    def update_metrics(
         self,
         portfolio_id: int,
         total_value: Decimal,
@@ -140,12 +139,12 @@ class PortfolioRepository:
         }
         
         stmt = update(Portfolio).where(Portfolio.id == portfolio_id).values(**update_data)
-        await self.db.execute(stmt)
-        await self.db.commit()
+        self.db.execute(stmt)
+        self.db.commit()
     
-    async def get_portfolio_summary(self, portfolio_id: int) -> Dict[str, Any]:
+    def get_portfolio_summary(self, portfolio_id: int) -> Dict[str, Any]:
         """Получение сводки по портфелю."""
-        portfolio = await self.get_by_id(portfolio_id)
+        portfolio = self.get_by_id(portfolio_id)
         if not portfolio:
             return {}
         
@@ -154,7 +153,7 @@ class PortfolioRepository:
             select(func.count(Account.id))
             .where(and_(Account.portfolio_id == portfolio_id, Account.is_active == True))
         )
-        accounts_count_result = await self.db.execute(accounts_count_stmt)
+        accounts_count_result = self.db.execute(accounts_count_stmt)
         accounts_count = accounts_count_result.scalar() or 0
         
         # Получаем общую стоимость cash балансов
@@ -162,7 +161,7 @@ class PortfolioRepository:
             select(func.coalesce(func.sum(Account.cash_balance), 0))
             .where(and_(Account.portfolio_id == portfolio_id, Account.is_active == True))
         )
-        cash_balance_result = await self.db.execute(cash_balance_stmt)
+        cash_balance_result = self.db.execute(cash_balance_stmt)
         total_cash = cash_balance_result.scalar() or Decimal('0')
         
         return {
@@ -190,7 +189,7 @@ class PortfolioRepository:
             'updated_at': portfolio.updated_at
         }
     
-    async def create_snapshot(
+    def create_snapshot(
         self,
         portfolio_id: int,
         snapshot_date: datetime,
@@ -217,17 +216,17 @@ class PortfolioRepository:
             )
             
             self.db.add(snapshot)
-            await self.db.commit()
-            await self.db.refresh(snapshot)
+            self.db.commit()
+            self.db.refresh(snapshot)
             
             return snapshot
             
         except Exception as e:
-            await self.db.rollback()
+            self.db.rollback()
             logger.error(f"Ошибка создания снимка портфеля {portfolio_id}: {e}")
             raise
     
-    async def get_snapshots(
+    def get_snapshots(
         self,
         portfolio_id: int,
         start_date: Optional[datetime] = None,
@@ -248,10 +247,10 @@ class PortfolioRepository:
         
         stmt = stmt.order_by(PortfolioSnapshot.snapshot_date.desc()).limit(limit)
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()
     
-    async def get_public_portfolios(
+    def get_public_portfolios(
         self,
         limit: int = 20,
         offset: int = 0
@@ -265,10 +264,10 @@ class PortfolioRepository:
             .limit(limit)
         )
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()
     
-    async def search_portfolios(
+    def search_portfolios(
         self,
         user_id: int,
         query: str,
@@ -288,5 +287,5 @@ class PortfolioRepository:
             .limit(limit)
         )
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()

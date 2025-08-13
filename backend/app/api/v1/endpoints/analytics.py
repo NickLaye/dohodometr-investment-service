@@ -30,7 +30,7 @@ async def get_performance(
     
     # Проверяем доступ к портфелю
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    portfolio = portfolio_repo.get_by_id(portfolio_id)
     
     if not portfolio:
         raise HTTPException(
@@ -72,7 +72,7 @@ async def get_performance(
         start_date = portfolio.created_at.date()
     
     # Получаем снимки портфеля для расчета TWR
-    snapshots = await portfolio_repo.get_snapshots(
+    snapshots = portfolio_repo.get_snapshots(
         portfolio_id=portfolio_id,
         start_date=datetime.combine(start_date, datetime.min.time()),
         end_date=datetime.combine(end_date, datetime.max.time())
@@ -102,7 +102,7 @@ async def get_performance(
     
     # Получаем денежные потоки
     transaction_repo = TransactionRepository(db)
-    transactions = await transaction_repo.get_portfolio_cashflows(
+    transactions = transaction_repo.get_portfolio_cashflows(
         portfolio_id=portfolio_id,
         start_date=datetime.combine(start_date, datetime.min.time()),
         end_date=datetime.combine(end_date, datetime.max.time())
@@ -180,7 +180,7 @@ async def get_allocation(
     
     # Проверяем доступ к портфелю
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    portfolio = portfolio_repo.get_by_id(portfolio_id)
     
     if not portfolio:
         raise HTTPException(
@@ -202,7 +202,7 @@ async def get_allocation(
     from sqlalchemy import select, and_
     
     account_repo = AccountRepository(db)
-    accounts = await account_repo.get_portfolio_accounts(portfolio_id)
+    accounts = account_repo.get_portfolio_accounts(portfolio_id)
     
     if not accounts:
         return {
@@ -221,7 +221,7 @@ async def get_allocation(
         .where(Holding.account_id.in_(account_ids))
     )
     
-    holdings_result = await db.execute(holdings_stmt)
+    holdings_result = db.execute(holdings_stmt)
     holdings = holdings_result.scalars().all()
     
     # Преобразуем в формат для аналитики
@@ -284,7 +284,7 @@ async def get_pnl_breakdown(
     
     # Проверяем доступ к портфелю
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    portfolio = portfolio_repo.get_by_id(portfolio_id)
     
     if not portfolio:
         raise HTTPException(
@@ -325,7 +325,7 @@ async def get_top_positions(
     
     # Проверяем доступ к портфелю
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    portfolio = portfolio_repo.get_by_id(portfolio_id)
     
     if not portfolio:
         raise HTTPException(
@@ -347,7 +347,7 @@ async def get_top_positions(
     from sqlalchemy import select
     
     account_repo = AccountRepository(db)
-    accounts = await account_repo.get_portfolio_accounts(portfolio_id)
+    accounts = account_repo.get_portfolio_accounts(portfolio_id)
     
     if not accounts:
         return {
@@ -363,7 +363,7 @@ async def get_top_positions(
         .where(Holding.account_id.in_(account_ids))
     )
     
-    holdings_result = await db.execute(holdings_stmt)
+    holdings_result = db.execute(holdings_stmt)
     holdings = holdings_result.scalars().all()
     
     # Формируем позиции

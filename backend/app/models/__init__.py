@@ -2,7 +2,7 @@
 Модели базы данных для сервиса учета инвестиций.
 """
 
-from app.core.database import Base
+from app.core.database_sync import Base
 
 # Импортируем все модели для правильного создания таблиц
 from . import (

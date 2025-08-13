@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 import enum
 
-from app.core.database import Base
+from app.core.database_sync import Base
 
 
 class InstrumentType(str, enum.Enum):

@@ -5,9 +5,8 @@
 from typing import List, Optional, Dict, Any
 from decimal import Decimal
 from datetime import datetime, date
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, update, delete, and_, func, or_
-from sqlalchemy.orm import selectinload
 
 from app.models.transaction import Transaction, TransactionType
 from app.models.holding import Holding
@@ -17,10 +16,10 @@ from app.core.logging import logger
 class TransactionRepository:
     """Репозиторий для работы с транзакциями."""
     
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.db = db
     
-    async def create(
+    def create(
         self,
         account_id: int,
         transaction_type: TransactionType,
@@ -55,24 +54,24 @@ class TransactionRepository:
             )
             
             self.db.add(transaction)
-            await self.db.flush()  # Получаем ID без коммита
+            self.db.flush()  # Получаем ID без коммита
             
             # Обрабатываем FIFO логику для покупок/продаж
             if transaction_type in [TransactionType.BUY, TransactionType.SELL] and instrument_id:
-                await self._update_holdings_fifo(transaction)
+                self._update_holdings_fifo(transaction)
             
-            await self.db.commit()
-            await self.db.refresh(transaction)
+            self.db.commit()
+            self.db.refresh(transaction)
             
             logger.info(f"Создана транзакция {transaction_type} на сумму {gross} {currency}")
             return transaction
             
         except Exception as e:
-            await self.db.rollback()
+            self.db.rollback()
             logger.error(f"Ошибка создания транзакции: {e}")
             raise
     
-    async def bulk_create(self, transactions_data: List[Dict[str, Any]]) -> List[Transaction]:
+    def bulk_create(self, transactions_data: List[Dict[str, Any]]) -> List[Transaction]:
         """Массовое создание транзакций."""
         try:
             transactions = []
@@ -81,28 +80,28 @@ class TransactionRepository:
                 self.db.add(transaction)
                 transactions.append(transaction)
             
-            await self.db.flush()  # Получаем ID для всех транзакций
+            self.db.flush()  # Получаем ID для всех транзакций
             
             # Обрабатываем FIFO для всех транзакций с инструментами
             for transaction in transactions:
                 if (transaction.transaction_type in [TransactionType.BUY, TransactionType.SELL] 
                     and transaction.instrument_id):
-                    await self._update_holdings_fifo(transaction)
+                    self._update_holdings_fifo(transaction)
             
-            await self.db.commit()
+            self.db.commit()
             
             for transaction in transactions:
-                await self.db.refresh(transaction)
+                self.db.refresh(transaction)
             
             logger.info(f"Создано {len(transactions)} транзакций")
             return transactions
             
         except Exception as e:
-            await self.db.rollback()
+            self.db.rollback()
             logger.error(f"Ошибка массового создания транзакций: {e}")
             raise
     
-    async def _update_holdings_fifo(self, transaction: Transaction):
+    def _update_holdings_fifo(self, transaction: Transaction):
         """Обновление холдингов с учетом FIFO логики."""
         if not transaction.instrument_id or not transaction.quantity:
             return
@@ -114,7 +113,7 @@ class TransactionRepository:
                 Holding.instrument_id == transaction.instrument_id
             )
         )
-        result = await self.db.execute(holding_stmt)
+        result = self.db.execute(holding_stmt)
         holding = result.scalar_one_or_none()
         
         if transaction.transaction_type == TransactionType.BUY:
@@ -147,7 +146,7 @@ class TransactionRepository:
                 
                 # Если количество стало 0, удаляем холдинг
                 if holding.quantity == 0:
-                    await self.db.delete(holding)
+                    self.db.delete(holding)
                 
                 # Генерируем FIFO lot_link для отслеживания
                 transaction.lot_link = f"fifo_{holding.id}_{transaction.id}"
@@ -159,13 +158,13 @@ class TransactionRepository:
                     f"Требуется: {transaction.quantity}"
                 )
     
-    async def get_by_id(self, transaction_id: int) -> Optional[Transaction]:
+    def get_by_id(self, transaction_id: int) -> Optional[Transaction]:
         """Получение транзакции по ID."""
         stmt = select(Transaction).where(Transaction.id == transaction_id)
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def get_account_transactions(
+    def get_account_transactions(
         self,
         account_id: int,
         start_date: Optional[datetime] = None,
@@ -192,10 +191,10 @@ class TransactionRepository:
         
         stmt = stmt.order_by(Transaction.ts.desc()).offset(offset).limit(limit)
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()
     
-    async def get_portfolio_transactions(
+    def get_portfolio_transactions(
         self,
         portfolio_id: int,
         start_date: Optional[datetime] = None,
@@ -229,35 +228,35 @@ class TransactionRepository:
         
         stmt = stmt.order_by(Transaction.ts.desc())
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         return result.scalars().all()
     
-    async def update(self, transaction_id: int, **kwargs) -> Optional[Transaction]:
+    def update(self, transaction_id: int, **kwargs) -> Optional[Transaction]:
         """Обновление транзакции."""
         # Исключаем поля, которые нельзя обновлять
         excluded_fields = {'id', 'created_at'}
         update_data = {k: v for k, v in kwargs.items() if k not in excluded_fields}
         
         if not update_data:
-            return await self.get_by_id(transaction_id)
+            return self.get_by_id(transaction_id)
         
         # Получаем старую транзакцию для пересчета холдингов
-        old_transaction = await self.get_by_id(transaction_id)
+        old_transaction = self.get_by_id(transaction_id)
         if not old_transaction:
             return None
         
         stmt = update(Transaction).where(Transaction.id == transaction_id).values(**update_data)
-        await self.db.execute(stmt)
+        self.db.execute(stmt)
         
         # TODO: Пересчитать холдинги если изменились ключевые поля
         # Это сложная логика, требующая отката старых изменений и применения новых
         
-        await self.db.commit()
-        return await self.get_by_id(transaction_id)
+        self.db.commit()
+        return self.get_by_id(transaction_id)
     
-    async def delete(self, transaction_id: int) -> bool:
+    def delete(self, transaction_id: int) -> bool:
         """Удаление транзакции с пересчетом холдингов."""
-        transaction = await self.get_by_id(transaction_id)
+        transaction = self.get_by_id(transaction_id)
         if not transaction:
             return False
         
@@ -266,17 +265,17 @@ class TransactionRepository:
             # Это требует сложной логики отката FIFO операций
             
             stmt = delete(Transaction).where(Transaction.id == transaction_id)
-            result = await self.db.execute(stmt)
-            await self.db.commit()
+            result = self.db.execute(stmt)
+            self.db.commit()
             
             return result.rowcount > 0
             
         except Exception as e:
-            await self.db.rollback()
+            self.db.rollback()
             logger.error(f"Ошибка удаления транзакции {transaction_id}: {e}")
             raise
     
-    async def get_portfolio_cashflows(
+    def get_portfolio_cashflows(
         self,
         portfolio_id: int,
         start_date: Optional[datetime] = None,
@@ -290,14 +289,14 @@ class TransactionRepository:
             TransactionType.WITHDRAWAL
         ]
         
-        return await self.get_portfolio_transactions(
+        return self.get_portfolio_transactions(
             portfolio_id=portfolio_id,
             start_date=start_date,
             end_date=end_date,
             transaction_type=cashflow_types
         )
     
-    async def get_transaction_stats(
+    def get_transaction_stats(
         self,
         account_id: int,
         start_date: Optional[datetime] = None,
@@ -313,7 +312,7 @@ class TransactionRepository:
             stmt = stmt.where(Transaction.ts <= end_date)
         
         # Общее количество транзакций
-        count_result = await self.db.execute(
+        count_result = self.db.execute(
             select(func.count()).select_from(stmt.subquery())
         )
         total_count = count_result.scalar()
@@ -327,7 +326,7 @@ class TransactionRepository:
             .group_by(Transaction.transaction_type)
         )
         
-        type_stats_result = await self.db.execute(type_stats_stmt)
+        type_stats_result = self.db.execute(type_stats_stmt)
         type_stats = {}
         
         for row in type_stats_result:
@@ -346,7 +345,7 @@ class TransactionRepository:
             }
         }
     
-    async def deduplicate_by_hash(
+    def deduplicate_by_hash(
         self,
         account_id: int,
         transaction_hash: str
@@ -360,7 +359,7 @@ class TransactionRepository:
             )
         )
         
-        result = await self.db.execute(stmt)
+        result = self.db.execute(stmt)
         count = result.scalar()
         
         return count > 0

@@ -6,7 +6,7 @@ from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Foreign
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from app.core.database import Base
+from app.core.database_sync import Base
 
 
 class Cashflow(Base):
