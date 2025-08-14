@@ -85,19 +85,21 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 ### 💻 Code Contributions
 
-1. **Create a feature branch** from `develop`
+1. **Create a feature branch** from `main` (Git Workflow)
    ```bash
-   git checkout develop
-   git pull origin develop
-   git checkout -b feature/your-feature-name
+   git checkout main
+   git pull --ff-only origin main
+   git checkout -b feat/your-scope-short
+   # examples: feat/auth-2fa, fix/api-400-status, docs/rules-v3
    ```
 
 2. **Make your changes** following our coding standards
 3. **Write tests** for new functionality
 4. **Run tests locally** to ensure everything passes
-5. **Commit with conventional commits**
+5. **Commit with Conventional Commits**
    ```bash
-   git commit -m "feat: add portfolio performance calculation"
+   git commit -m "feat(auth): add 2FA TOTP flow"
+   git commit -m "fix(api): return 400 for invalid 2FA code"
    ```
 
 6. **Push your branch**
@@ -105,17 +107,25 @@ This project and everyone participating in it is governed by our [Code of Conduc
    git push origin feature/your-feature-name
    ```
 
-7. **Create a Pull Request** using our PR template
+7. **Create a Pull Request** using our PR template (Squash & Merge only)
 
 ## 🔄 Pull Request Process
 
-### Before Submitting
+### Before Submitting (Required Checks)
 
 - [ ] **Tests pass** locally (`make test`)
 - [ ] **Linting passes** (`make lint`)
 - [ ] **Documentation** is updated if needed
 - [ ] **Commit messages** follow conventional commits
-- [ ] **Branch is up-to-date** with develop
+- [ ] **Branch is up-to-date** with main (rebase if needed)
+
+CI jobs required to merge into `main`:
+
+- Backend Tests
+- Frontend Tests
+- Security Scan
+- Docker Build Test
+- Quality Gate
 
 ### PR Requirements
 
@@ -125,12 +135,21 @@ This project and everyone participating in it is governed by our [Code of Conduc
 4. **Include tests** for new functionality
 5. **Update documentation** if needed
 
-### Review Process
+### Review Process (Branch Protection)
 
-1. **Automated checks** must pass (CI/CD pipeline)
-2. **Code review** by at least one maintainer
+1. **Automated checks** must pass (see required checks above)
+2. **Code review** by at least one maintainer (2 for security/infra/high‑risk)
 3. **Security review** for sensitive changes
 4. **Manual testing** for UI/UX changes
+
+### Git Workflow Summary
+
+- Base branch: `main` (protected, linear history, squash merge)
+- Branch naming: `feat|fix|docs|chore|perf|refactor|ci/<scope>-<short>`
+- Conventional Commits for all commits and PR titles: `type(scope): subject`
+- Rebase your branch onto latest `main` before requesting review
+- Small PRs are preferred (≤400 LOC diff)
+- Delete the feature branch after merge
 
 ## 📝 Issue Guidelines
 
