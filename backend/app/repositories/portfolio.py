@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, update, delete, and_, func
 
 from app.models.portfolio import Portfolio, PortfolioSnapshot
+from app.schemas.portfolio import PortfolioCreate, PortfolioUpdate
 from app.models.account import Account
 from app.core.logging import logger
 
@@ -21,19 +22,17 @@ class PortfolioRepository:
     
     def create(
         self,
-        owner_id: int,
-        name: str,
-        base_currency: str = "RUB",
-        description: Optional[str] = None,
+        data: PortfolioCreate,
+        user_id: int,
         **kwargs
     ) -> Portfolio:
-        """Создание нового портфеля."""
+        """Создание нового портфеля из схемы."""
         try:
             portfolio = Portfolio(
-                owner_id=owner_id,
-                name=name.strip(),
-                base_currency=base_currency,
-                description=description.strip() if description else None,
+                owner_id=user_id,
+                name=data.name.strip(),
+                base_currency=data.base_currency,
+                description=data.description.strip() if data.description else None,
                 **kwargs
             )
             
@@ -41,7 +40,7 @@ class PortfolioRepository:
             self.db.commit()
             self.db.refresh(portfolio)
             
-            logger.info(f"Создан портфель: {portfolio.name} для пользователя {owner_id}")
+            logger.info(f"Создан портфель: {portfolio.name} для пользователя {user_id}")
             return portfolio
             
         except Exception as e:
@@ -65,7 +64,7 @@ class PortfolioRepository:
         result = self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    def get_user_portfolios(
+    def get_by_user_id(
         self,
         user_id: int,
         is_active: bool = True,
@@ -83,11 +82,12 @@ class PortfolioRepository:
         result = self.db.execute(stmt)
         return result.scalars().all()
     
-    def update(self, portfolio_id: int, **kwargs) -> Optional[Portfolio]:
-        """Обновление портфеля."""
+    def update(self, portfolio_id: int, data: PortfolioUpdate) -> Optional[Portfolio]:
+        """Обновление портфеля из схемы."""
         # Исключаем поля, которые нельзя обновлять напрямую
         excluded_fields = {'id', 'owner_id', 'created_at', 'total_value', 'total_cost', 'total_pnl'}
-        update_data = {k: v for k, v in kwargs.items() if k not in excluded_fields}
+        input_dict = data.dict(exclude_none=True)
+        update_data = {k: v for k, v in input_dict.items() if k not in excluded_fields}
         
         if not update_data:
             return self.get_by_id(portfolio_id)
