@@ -181,6 +181,11 @@ def refresh_token(
     try:
         # Проверяем refresh токен
         payload = verify_token(refresh_token, "refresh")
+        if payload is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Недействительный токен"
+            )
         user_id = payload.get("sub")
         
         if not user_id:
@@ -231,6 +236,8 @@ def logout(
     try:
         # Парсим токен для получения JTI и exp
         payload = verify_token(credentials.credentials, "access")
+        if payload is None:
+            return {"message": "Выход из системы завершен"}
         jti = payload.get("jti")
         exp_timestamp = payload.get("exp")
         
