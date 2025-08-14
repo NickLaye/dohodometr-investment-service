@@ -27,11 +27,7 @@ services:
     working_dir: /app
     environment:
       - ENVIRONMENT=testing
-<<<<<<< HEAD
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db_test
-=======
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db
->>>>>>> e0f1adf (ci(tests): set ENVIRONMENT=testing for backend test container)
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=test-secret
       - PYTHONDONTWRITEBYTECODE=1
