@@ -26,6 +26,19 @@ Relates to #(issue_number)
 - Backend: XX%
 - Frontend: XX%
 
+## ✅ Required Checks (for main)
+- [ ] Backend Tests (CI)
+- [ ] Frontend Tests (CI)
+- [ ] Security Scan (CI)
+- [ ] Docker Build Test (CI)
+- [ ] Quality Gate (CI)
+
+## 🔀 Git Workflow
+- Base branch: `main` (protected, linear history, squash merge)
+- Branch name: `feat|fix|docs|chore|perf|refactor|ci/<scope>-<short>`
+- Title follows Conventional Commits: `type(scope): subject`
+- Rebased on latest `main`
+
 ## 📋 Checklist
 ### Code Quality
 - [ ] My code follows the project's style guidelines
@@ -51,6 +64,9 @@ Relates to #(issue_number)
 - [ ] Loading states are handled
 - [ ] Error states are handled
 - [ ] Mobile responsive design is maintained
+
+## 🏷 Auto-labels (optional)
+Add labels matching your scope (e.g. `area/backend`, `area/frontend`, `area/infra`, `area/security`).
 
 ## 📸 Screenshots (if applicable)
 Add screenshots to help explain your changes.
