@@ -102,7 +102,7 @@ jobs:
           pytest --cov=app --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
+        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         with:
           file: backend/coverage.xml
           flags: backend
@@ -147,7 +147,7 @@ jobs:
           npm run test:coverage
 
       - name: Upload frontend coverage
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
+        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         with:
           file: frontend/coverage/lcov.info
           flags: frontend
