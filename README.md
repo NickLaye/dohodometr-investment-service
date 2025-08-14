@@ -461,8 +461,12 @@ curl -fsSL https://raw.githubusercontent.com/YOUR_REPO/main/deploy_vps.sh | sudo
 - 📧 Email: support@investment-service.ru
 - 💬 Telegram: @investment_service_support
 - 📖 Wiki: [GitHub Wiki](../../wiki)
-- 🐛 Issues: [GitHub Issues](../../issues)
-
----
+ - 🐛 Issues: [GitHub Issues](../../issues)
+ 
+ ## 🧠 Нейросотрудники (Оркестратор)
+ 
+ Для взаимодействия через Cursor используйте Оркестратора: см. `docs/ops/agents-invoke.md` и `docs/ops/agent-scenarios.md`.
+ 
+ ---
 
 **⭐ Если проект оказался полезным, поставьте звездочку на GitHub!**
