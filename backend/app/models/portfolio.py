@@ -94,6 +94,7 @@ class Portfolio(Base):
         cascade="all, delete-orphan"
     )
     user: Mapped["User"] = relationship("User", back_populates="portfolios")
+    custom_assets: Mapped[List["CustomAsset"]] = relationship("CustomAsset", back_populates="portfolio")
     
     # Ограничения и индексы
     __table_args__ = (
