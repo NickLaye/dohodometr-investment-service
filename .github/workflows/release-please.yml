@@ -4,6 +4,11 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      release_as:
+        description: 'Force version (e.g., 1.0.0)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -19,6 +24,7 @@ jobs:
           release-type: simple
           bump-minor-pre-major: true
           bump-patch-for-minor-pre-major: true
+          release-as: ${{ inputs.release_as }}
           changelog-types: |
             [{"type":"feat","section":"Features","hidden":false},
              {"type":"fix","section":"Bug Fixes","hidden":false},
