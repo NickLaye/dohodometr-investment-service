@@ -66,8 +66,16 @@ cipher_suite = Fernet(get_encryption_key())
 
 # Функции для работы с паролями
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Проверка пароля с использованием bcrypt."""
+    """Проверка пароля. Предпочтительно Argon2, fallback на bcrypt."""
     try:
+        # Если это Argon2-хеш
+        if hashed_password.startswith("$argon2id$"):
+            try:
+                argon2_hasher.verify(hashed_password, plain_password)
+                return True
+            except VerifyMismatchError:
+                return False
+        # Иначе пробуем bcrypt
         return pwd_context.verify(plain_password, hashed_password)
     except Exception as e:
         logger.error(f"Ошибка проверки пароля: {e}")
@@ -75,15 +83,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    """Хеширование пароля с использованием bcrypt."""
-    try:
-        return pwd_context.hash(password)
-    except Exception as e:
-        logger.error(f"Ошибка хеширования пароля: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Ошибка обработки пароля"
-        )
+    """Хеширование пароля по умолчанию (Argon2)."""
+    return get_password_hash_secure(password)
 
 
 def verify_password_secure(plain_password: str, hashed_password: str) -> bool:
@@ -124,11 +125,18 @@ def validate_password_strength(password: str) -> bool:
     return sum([has_upper, has_lower, has_digit, has_special]) >= 3
 
 
+# Совместимость с тестами
+def hash_password(password: str) -> str:
+    """Alias для ожидаемого тестами имени функции."""
+    return get_password_hash_secure(password)
+
+
 # Функции для работы с JWT токенами
 def create_access_token(
     subject: Union[str, Any], 
     expires_delta: timedelta = None,
-    additional_claims: dict = None
+    additional_claims: dict = None,
+    **claims: Any
 ) -> str:
     """Создание JWT access токена."""
     if expires_delta:
@@ -146,8 +154,13 @@ def create_access_token(
         "jti": secrets.token_urlsafe(16),  # Unique token ID
     }
     
+    merged_claims = {}
     if additional_claims:
-        to_encode.update(additional_claims)
+        merged_claims.update(additional_claims)
+    if claims:
+        merged_claims.update(claims)
+    if merged_claims:
+        to_encode.update(merged_claims)
     
     try:
         encoded_jwt = jwt.encode(
@@ -247,7 +260,7 @@ def generate_totp_qr_code(email: str, secret: str) -> str:
     return f"data:image/png;base64,{img_str}"
 
 
-def verify_totp_token(secret: str, token: str) -> bool:
+def verify_totp_token(token: str, secret: str) -> bool:
     """Проверка TOTP токена."""
     try:
         totp = pyotp.TOTP(secret)

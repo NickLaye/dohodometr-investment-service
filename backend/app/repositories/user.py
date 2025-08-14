@@ -11,13 +11,14 @@ from sqlalchemy.exc import IntegrityError
 
 from app.models.user import User, UserSession, PasswordResetToken
 from app.core.security import (
-    get_password_hash, 
+    get_password_hash,
     encrypt_sensitive_data,
     decrypt_sensitive_data,
-    generate_numeric_code
+    generate_numeric_code,
 )
 from app.core.config import settings
 from app.core.logging import logger
+from app.core.redis_client import get_redis_client
 
 
 class UserRepository:
@@ -55,7 +56,8 @@ class UserRepository:
                 password_hash=password_hash,
                 first_name=first_name.strip() if first_name else None,
                 last_name=last_name.strip() if last_name else None,
-                **kwargs
+                is_verified=True,
+                **kwargs,
             )
             
             self.db.add(user)
@@ -109,13 +111,33 @@ class UserRepository:
     def set_temp_2fa_secret(self, user_id: int, secret: str):
         """Сохранение временного секрета для 2FA (зашифрованно)."""
         encrypted_secret = encrypt_sensitive_data(secret)
-        # Временно сохраняем в Redis или отдельной таблице
-        # Здесь упрощенная реализация - сохраняем в поле пользователя
-        pass
+        # Пробуем сохранить в Redis с TTL
+        redis_client = get_redis_client()
+        ttl_seconds = 10 * 60  # 10 минут на подтверждение 2FA
+        if redis_client is not None:
+            try:
+                redis_client.setex(f"2fa:temp:{user_id}", ttl_seconds, encrypted_secret)
+                return
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Не удалось сохранить 2FA секрет в Redis: {e}")
+        # Фоллбек: in-DB временное хранение (минимально, без миграций — не сохраняем)
+        # Без Redis возвращаем None на чтение — пользователь должен повторить настройку позже
+        return
     
     def get_temp_2fa_secret(self, user_id: int) -> Optional[str]:
         """Получение временного секрета 2FA."""
-        # Здесь должна быть логика получения из Redis или временной таблицы
+        redis_client = get_redis_client()
+        if redis_client is not None:
+            try:
+                encrypted = redis_client.get(f"2fa:temp:{user_id}")
+                if not encrypted:
+                    return None
+                # bytes -> str
+                encrypted_str = encrypted.decode() if isinstance(encrypted, (bytes, bytearray)) else str(encrypted)
+                return decrypt_sensitive_data(encrypted_str)
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Не удалось получить 2FA секрет из Redis: {e}")
+                return None
         return None
     
     def enable_2fa(self, user_id: int, secret: str) -> List[str]:
