@@ -265,3 +265,18 @@ if settings.ENVIRONMENT == "production":
     assert settings.MINIO_ACCESS_KEY not in ["admin", "minio_dev_only", "minio_dev_access_key"], "Установите надежный MINIO_ACCESS_KEY для production"
     assert len(settings.ENCRYPTION_SALT) >= 32, "ENCRYPTION_SALT должен быть не менее 32 символов для production"
     assert not settings.DEBUG, "Отключите DEBUG режим для production"
+
+
+def validate_production_config(cfg: "Settings") -> None:
+    """Дополнительная валидация production-конфигурации (используется тестами).
+
+    Поднимает AssertionError при нарушениях.
+    """
+    if cfg.ENVIRONMENT != "production":
+        return
+    assert cfg.SECRET_KEY != "changeme", "SECRET_KEY must be set in production"
+    assert cfg.JWT_SECRET_KEY != "changeme", "JWT_SECRET_KEY must be set in production"
+    assert cfg.DATABASE_PASSWORD not in ("password", "postgres_dev_only"), "Weak database password in production"
+    assert cfg.MINIO_ACCESS_KEY not in ("admin", "minio_dev_only", "minio_dev_access_key"), "Weak MINIO access key in production"
+    assert cfg.ENCRYPTION_SALT and len(cfg.ENCRYPTION_SALT) >= 32, "ENCRYPTION_SALT too short"
+    assert not cfg.DEBUG, "DEBUG must be disabled in production"
