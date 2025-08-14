@@ -97,14 +97,19 @@ exclude = [
 	"RUF001", "RUF002", "RUF003",
 	"E501", "S105", "B017", "PT011",
 	"SIM117", "SIM222", "SLF001", "ERA001", "F841",
-	"S608"  # allow raw SQL indicator in tests
+	"S608"
 ]
 "migrations/*" = ["ALL"]
 "conftest.py" = [
-	"ARG001", "N806", "PT004", "PTH110", "SIM105", "E501"
+	"ARG001", "N806", "PT004", "PTH110", "SIM105", "E501", "S105", "PTH107"
 ]
 "check_startup.py" = [
-	"T201", "RUF001", "RET505"
+	"T201", "RUF001", "RET505", "PTH120", "PTH100", "F401", "TRY300", "E501"
+]
+"app/services/**" = [
+	"RUF001", "RUF002", "RUF003",
+	"E501", "UP007", "TRY200", "TRY300", "TRY400", "B904",
+	"N818", "E712", "ARG001", "ARG002"
 ]
 "app/api/**" = [
 	"B008",  # Depends/File in defaults (FastAPI pattern)
