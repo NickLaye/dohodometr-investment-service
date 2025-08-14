@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.6
 # Multi-stage build for optimized production image
-FROM python:3.12-slim as builder
+FROM python:3.13-slim as builder
 
 # Build arguments
 ARG BUILD_DATE
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --user -r requirements.txt
 
 # Production stage - minimal distroless-like image  
-FROM python:3.12-slim as production
+FROM python:3.13-slim as production
 
 # Security: Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser --uid=1001 appuser
