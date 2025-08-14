@@ -42,20 +42,21 @@ jobs:
           python-version: '3.12'
 
       - name: Install backend (dev) deps
+        working-directory: backend
         run: |
-          cd backend
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
       - name: Run schemathesis against ASGI app
+        working-directory: backend
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379/0
           SECRET_KEY: test-secret
           JWT_SECRET_KEY: test-jwt
           ENVIRONMENT: testing
+          PYTHONPATH: .
         run: |
-          cd backend
           schemathesis run --app app.main:app --base-url=http://testserver \
             --checks all --hypothesis-deadline=200 --workers=2 --rate-limit=50 \
             /openapi.json
