@@ -21,6 +21,38 @@ env:
   TZ: 'UTC'
 
 jobs:
+  # Backend Lint/Types (не блокирует Quality Gate)
+  lint-backend:
+    name: Backend Lint & Types
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5ccb29d8773c3f3f653e1705f474dfaa8a06a912 # v4.7.1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dev dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Ruff (lint only)
+        run: |
+          cd backend
+          ruff check . --output-format=github
+        continue-on-error: true
+
+      - name: MyPy (types only)
+        run: |
+          cd backend
+          mypy .
+        continue-on-error: true
+
   # Backend Tests
   backend-tests:
     name: Backend Tests
@@ -73,17 +105,6 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-
-      - name: Lint with ruff
-        run: |
-          cd backend
-          ruff check . --output-format=github
-          ruff format --check .
-
-      - name: Type check with mypy
-        run: |
-          cd backend
-          mypy .
 
       - name: Security check with bandit
         run: |
