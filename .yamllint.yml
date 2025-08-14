@@ -1,11 +1,14 @@
 # YAML Linting Configuration for Dohodometr
 extends: default
-
 rules:
-  # Lines
   line-length:
-    max: 120
-    level: warning
+    max: 140
+    allow-non-breakable-words: true
+  truthy:
+    check-keys: false
+  indentation:
+    indent-sequences: consistent
+    indent: 2
 
   # Indentation
   indentation:

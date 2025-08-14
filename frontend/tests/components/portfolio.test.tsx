@@ -24,7 +24,7 @@ const MockPortfolioCard = ({
   <div data-testid={`portfolio-card-${portfolio.id}`}>
     <h3 data-testid="portfolio-name">{portfolio.name}</h3>
     <p data-testid="portfolio-description">{portfolio.description}</p>
-    <p data-testid="portfolio-value">${portfolio.total_value?.toLocaleString()}</p>
+    <p data-testid="portfolio-value">${portfolio.total_value?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
     <p data-testid="portfolio-currency">{portfolio.base_currency}</p>
     <button 
       data-testid="edit-button" 
@@ -537,7 +537,7 @@ describe('Portfolio Components', () => {
     });
 
     it('handles portfolio deletion', async () => {
-      mockApiSuccess(null);
+      mockApiSuccess(null, 204);
 
       const portfolioId = 1;
       

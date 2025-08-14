@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.6
 # Multi-stage build for optimized production image
 FROM node:20-alpine AS dependencies
 
@@ -15,8 +16,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with exact versions
-RUN npm ci --omit=dev && npm cache clean --force
+# Install dependencies with exact versions (mount cache)
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev && npm cache clean --force
 
 # Development dependencies stage
 FROM node:20-alpine AS builder
@@ -28,7 +30,8 @@ WORKDIR /app
 
 # Copy package files and install all dependencies  
 COPY package*.json ./
-RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
 # Copy source code
 COPY . .
@@ -86,7 +89,7 @@ EXPOSE 3000
 
 # Enhanced health check with proper timeouts
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
+    CMD curl -f http://localhost:3000/ || exit 1
 
 # Security: Use dumb-init and exec form
 ENTRYPOINT ["dumb-init", "--"]

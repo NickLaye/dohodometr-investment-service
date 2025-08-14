@@ -110,8 +110,8 @@ Object.defineProperty(window, 'ResizeObserver', {
   value: ResizeObserverMock,
 });
 
-// Mock fetch API
-global.fetch = vi.fn();
+// Mock fetch API using Vitest stub (ensures mockResolvedValueOnce exists)
+vi.stubGlobal('fetch', vi.fn());
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -190,7 +190,7 @@ export const mockTransaction = {
 };
 
 // Test helper functions
-export const createMockResponse = <T>(data: T, status = 200) => ({
+export const createMockResponse = <T,>(data: T, status = 200) => ({
   ok: status >= 200 && status < 300,
   status,
   json: () => Promise.resolve(data),
@@ -208,14 +208,26 @@ export const createMockResponse = <T>(data: T, status = 200) => ({
   formData: () => Promise.resolve(new FormData()),
 });
 
-export const mockApiSuccess = <T>(data: T) => {
-  (fetch as any).mockResolvedValueOnce(createMockResponse(data));
+export const mockApiSuccess = <T,>(data: T, status = 200) => {
+  const f: any = (globalThis as any).fetch;
+  if (!f || typeof f.mockResolvedValueOnce !== 'function') {
+    vi.spyOn(globalThis as any, 'fetch').mockResolvedValueOnce(createMockResponse(data, status));
+  } else {
+    f.mockResolvedValueOnce(createMockResponse(data, status));
+  }
 };
 
 export const mockApiError = (status = 500, message = 'Internal Server Error') => {
-  (fetch as any).mockResolvedValueOnce(
-    createMockResponse({ error: message }, status)
-  );
+  const f: any = (globalThis as any).fetch;
+  if (!f || typeof f.mockResolvedValueOnce !== 'function') {
+    vi.spyOn(globalThis as any, 'fetch').mockResolvedValueOnce(
+      createMockResponse({ error: message }, status)
+    );
+  } else {
+    f.mockResolvedValueOnce(
+      createMockResponse({ error: message }, status)
+    );
+  }
 };
 
 // Helper to create auth context value
