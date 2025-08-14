@@ -59,5 +59,6 @@ jobs:
         run: |
           schemathesis run --app app.main:app --base-url=http://testserver \
             --checks all --hypothesis-deadline=200 --workers=2 --rate-limit=50/m \
+            --show-errors-tracebacks \
             /openapi.json
 
