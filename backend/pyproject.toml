@@ -96,10 +96,16 @@ exclude = [
 	"S101", "ARG001", "ARG002",
 	"RUF001", "RUF002", "RUF003",
 	"E501", "S105", "B017", "PT011",
-	"SIM117", "SIM222", "SLF001", "ERA001", "F841"
+	"SIM117", "SIM222", "SLF001", "ERA001", "F841",
+	"S608"  # allow raw SQL indicator in tests
 ]
 "migrations/*" = ["ALL"]
-"conftest.py" = ["ARG001"]
+"conftest.py" = [
+	"ARG001", "N806", "PT004", "PTH110", "SIM105", "E501"
+]
+"check_startup.py" = [
+	"T201", "RUF001", "RET505"
+]
 "app/api/**" = [
 	"B008",  # Depends/File in defaults (FastAPI pattern)
 	"C901",  # complex functions allowed in endpoints
