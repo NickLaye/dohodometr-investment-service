@@ -537,7 +537,7 @@ describe('Portfolio Components', () => {
     });
 
     it('handles portfolio deletion', async () => {
-      mockApiSuccess(null);
+      mockApiSuccess(null, 204);
 
       const portfolioId = 1;
       

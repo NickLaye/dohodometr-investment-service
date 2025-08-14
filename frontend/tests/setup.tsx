@@ -208,12 +208,12 @@ export const createMockResponse = <T,>(data: T, status = 200) => ({
   formData: () => Promise.resolve(new FormData()),
 });
 
-export const mockApiSuccess = <T,>(data: T) => {
+export const mockApiSuccess = <T,>(data: T, status = 200) => {
   const f: any = (globalThis as any).fetch;
   if (!f || typeof f.mockResolvedValueOnce !== 'function') {
-    vi.spyOn(globalThis as any, 'fetch').mockResolvedValueOnce(createMockResponse(data));
+    vi.spyOn(globalThis as any, 'fetch').mockResolvedValueOnce(createMockResponse(data, status));
   } else {
-    f.mockResolvedValueOnce(createMockResponse(data));
+    f.mockResolvedValueOnce(createMockResponse(data, status));
   }
 };
 
