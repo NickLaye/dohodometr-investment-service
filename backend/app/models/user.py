@@ -22,6 +22,8 @@ class User(Base):
     # Основные поля
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    # Совместимость со старыми тестами/клиентами: username как отдельное поле
+    username: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     
     # Персональная информация
@@ -152,6 +154,15 @@ class User(Base):
             return self.last_name
         else:
             return self.email.split('@')[0]
+
+    # Совместимость: alias для hashed_password (старое имя поля в тестах)
+    @property
+    def hashed_password(self) -> str:
+        return self.password_hash
+
+    @hashed_password.setter
+    def hashed_password(self, value: str) -> None:
+        self.password_hash = value
     
     @property
     def is_locked(self) -> bool:

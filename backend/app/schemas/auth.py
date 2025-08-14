@@ -9,7 +9,8 @@ from app.core.config import settings
 
 class UserLogin(BaseModel):
     """Схема для входа пользователя."""
-    email: EmailStr
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None  # Допустим email может приходить под именем username (совместимость тестов)
     password: str
     totp_code: Optional[str] = None
 
@@ -18,6 +19,8 @@ class UserRegister(BaseModel):
     """Схема для регистрации пользователя."""
     email: EmailStr
     password: str
+    username: Optional[str] = None
+    full_name: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     
@@ -39,6 +42,7 @@ class User(BaseModel):
     """Схема пользователя для ответов API."""
     id: int
     email: EmailStr
+    username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_active: bool
