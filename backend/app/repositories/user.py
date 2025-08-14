@@ -11,13 +11,15 @@ from sqlalchemy.exc import IntegrityError
 
 from app.models.user import User, UserSession, PasswordResetToken
 from app.core.security import (
-    get_password_hash, 
+    hash_password,
+    verify_password,
     encrypt_sensitive_data,
     decrypt_sensitive_data,
     generate_numeric_code
 )
 from app.core.config import settings
 from app.core.logging import logger
+from app.schemas.auth import UserCreate
 
 
 class UserRepository:
@@ -38,24 +40,23 @@ class UserRepository:
         result = self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    def create(
-        self,
-        email: str,
-        password: str,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        **kwargs
-    ) -> User:
-        """Создание нового пользователя."""
+    def get_by_username(self, username: str) -> Optional[User]:
+        stmt = select(User).where(User.username == username)
+        result = self.db.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    def create(self, data: UserCreate) -> User:
+        """Создание нового пользователя из схемы."""
         try:
-            password_hash = get_password_hash(password)
+            password_hash = hash_password(data.password)
             
             user = User(
-                email=email.lower().strip(),
-                password_hash=password_hash,
-                first_name=first_name.strip() if first_name else None,
-                last_name=last_name.strip() if last_name else None,
-                **kwargs
+                email=data.email.lower().strip(),
+                username=data.username,
+                full_name=data.full_name,
+                hashed_password=password_hash,
+                is_active=True,
+                is_superuser=False,
             )
             
             self.db.add(user)
@@ -67,12 +68,21 @@ class UserRepository:
             
         except IntegrityError as e:
             self.db.rollback()
-            logger.error(f"Ошибка создания пользователя (уже существует): {email}")
+            logger.error(f"Ошибка создания пользователя (уже существует): {data.email}")
             raise ValueError("Пользователь с таким email уже существует")
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Ошибка создания пользователя {email}: {e}")
+            logger.error(f"Ошибка создания пользователя {data.email}: {e}")
             raise
+    
+    def authenticate(self, email: str, password: str) -> Optional[User]:
+        """Аутентификация пользователя по email и паролю."""
+        user = self.get_by_email(email)
+        if not user:
+            return None
+        if not verify_password(password, user.hashed_password):
+            return None
+        return user
     
     def update_login_info(self, user_id: int, ip_address: str = None):
         """Обновление информации о входе."""
@@ -109,18 +119,16 @@ class UserRepository:
     def set_temp_2fa_secret(self, user_id: int, secret: str):
         """Сохранение временного секрета для 2FA (зашифрованно)."""
         encrypted_secret = encrypt_sensitive_data(secret)
-        # Временно сохраняем в Redis или отдельной таблице
-        # Здесь упрощенная реализация - сохраняем в поле пользователя
-        pass
+        # TODO: реализовать хранение в Redis
+        return None
     
     def get_temp_2fa_secret(self, user_id: int) -> Optional[str]:
         """Получение временного секрета 2FA."""
-        # Здесь должна быть логика получения из Redis или временной таблицы
+        # TODO: реализовать получение из Redis
         return None
     
     def enable_2fa(self, user_id: int, secret: str) -> List[str]:
         """Включение 2FA для пользователя."""
-        # Генерируем резервные коды
         backup_codes = [generate_numeric_code(8) for _ in range(10)]
         backup_codes_encrypted = encrypt_sensitive_data(','.join(backup_codes))
         secret_encrypted = encrypt_sensitive_data(secret)
