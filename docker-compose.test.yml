@@ -43,7 +43,7 @@ services:
       sh -lc "python -m pip install --upgrade pip && 
       apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && 
       pip install -r requirements-dev.txt && 
-      pytest -v --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --maxfail=1"
+      pytest -p pytest_cov -v --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --maxfail=1"
 
   frontend:
     image: node:20-alpine
