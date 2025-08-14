@@ -382,5 +382,5 @@ def pytest_configure(config):
 def validate_test_environment():
     """Validate that we're running in test environment."""
     assert settings.ENVIRONMENT == "testing", "Tests must run in testing environment"
-    assert "test" in settings.DATABASE_URL.lower(), "Tests must use test database"
+    assert settings.DATABASE_URL is not None and "test" in str(settings.DATABASE_URL).lower(), "Tests must use test database"
     yield
