@@ -270,6 +270,18 @@ def verify_totp_token(token: str, secret: str) -> bool:
         return False
 
 
+def verify_totp_code(secret: str, code: str) -> bool:
+    """Совместимый с тестами враппер: проверка TOTP-кода по секрету.
+
+    Порядок аргументов как ожидается тестами: (secret, code).
+    """
+    try:
+        totp = pyotp.TOTP(secret)
+        return totp.verify(code, valid_window=1)
+    except Exception as e:
+        logger.error(f"Ошибка проверки TOTP кода: {e}")
+        return False
+
 # Функции для шифрования чувствительных данных
 def encrypt_sensitive_data(data: str) -> str:
     """Шифрование чувствительных данных."""
