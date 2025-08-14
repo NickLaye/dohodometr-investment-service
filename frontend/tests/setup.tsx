@@ -110,8 +110,8 @@ Object.defineProperty(window, 'ResizeObserver', {
   value: ResizeObserverMock,
 });
 
-// Mock fetch API
-global.fetch = vi.fn();
+// Mock fetch API using Vitest stub (ensures mockResolvedValueOnce exists)
+vi.stubGlobal('fetch', vi.fn());
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
