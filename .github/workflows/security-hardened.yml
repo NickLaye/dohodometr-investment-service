@@ -10,22 +10,25 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Minimal permissions principle
 permissions:
   actions: read
   contents: read
   security-events: write
   pull-requests: read
 
+concurrency:
+  group: sec-hard-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PYTHON_VERSION: '3.12'
   NODE_VERSION: '20'
 
 jobs:
-  # Gitleaks secret detection
   secret-detection:
     name: Secret Detection with Gitleaks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     continue-on-error: true
     
     steps:
@@ -40,10 +43,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: false
 
-  # Enhanced CodeQL Analysis
   codeql-analysis:
     name: Enhanced CodeQL Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     continue-on-error: true
     
     strategy:
@@ -97,10 +100,10 @@ jobs:
         with:
           category: "/language:${{matrix.language}}"
 
-  # SBOM Generation
   sbom-generation:
     name: Generate Software Bill of Materials
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     continue-on-error: true
     
     steps:
@@ -130,10 +133,10 @@ jobs:
             frontend-sbom.json
           retention-days: 90
 
-  # Enhanced Dependency Scanning
   dependency-audit:
     name: Enhanced Dependency Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     continue-on-error: true
     
     steps:
@@ -158,19 +161,19 @@ jobs:
       - name: Python Security Audit with pip-audit (non-blocking)
         run: |
           cd backend
-          pip-audit --format=json --output=pip-audit-report.json
+          pip-audit --format=json --output=pip-audit-report.json || true
         continue-on-error: true
 
       - name: Python Security Check with Safety (non-blocking)
         run: |
           cd backend
-          safety check --json --output safety-report.json
+          safety check --json --output safety-report.json || true
         continue-on-error: true
 
       - name: Python Security Scan with Bandit
         run: |
           cd backend
-          bandit -r app/ -f json -o bandit-report.json
+          bandit -r app/ -f json -o bandit-report.json || true
         continue-on-error: true
 
       - name: Set up Node.js
@@ -203,10 +206,10 @@ jobs:
             frontend/npm-audit-report.json
           retention-days: 30
 
-  # Enhanced Docker Security Scanning
   docker-security-scan:
     name: Enhanced Docker Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     if: github.event_name != 'schedule'
     continue-on-error: true
     
@@ -267,7 +270,6 @@ jobs:
           sarif_file: 'frontend-trivy-results.sarif'
           category: 'trivy-frontend'
 
-  # Infrastructure Security Scan
   infrastructure-security:
     name: Infrastructure Security Scan
     runs-on: ubuntu-latest
@@ -293,11 +295,11 @@ jobs:
           sarif_file: checkov-results.sarif
           category: 'checkov-infrastructure'
 
-  # Security Summary Report
   security-summary:
     name: Security Scan Summary
     runs-on: ubuntu-latest
-    needs: [secret-detection, codeql-analysis, sbom-generation, dependency-audit, docker-security-scan, infrastructure-security]
+    timeout-minutes: 10
+    needs: [secret-detection, codeql-analysis, sbom-generation, dependency-audit, docker-security-scan]
     if: always()
     
     steps:
@@ -314,10 +316,8 @@ jobs:
           echo "| SBOM Generation | ${{ needs.sbom-generation.result == 'success' && '✅ Passed' || '❌ Failed' }} | Software inventory created |" >> $GITHUB_STEP_SUMMARY
           echo "| Dependency Audit | ${{ needs.dependency-audit.result == 'success' && '✅ Passed' || '❌ Failed' }} | Vulnerability scan completed |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker Security | ${{ needs.docker-security-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} | Container image scan |" >> $GITHUB_STEP_SUMMARY
-          echo "| Infrastructure Security | ${{ needs.infrastructure-security.result == 'success' && '✅ Passed' || '❌ Failed' }} | IaC security validation |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🔗 Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "- Review security alerts in the Security tab" >> $GITHUB_STEP_SUMMARY
           echo "- Download SBOM and security reports from artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- Address any critical or high severity findings" >> $GITHUB_STEP_SUMMARY

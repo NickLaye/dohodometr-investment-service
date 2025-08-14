@@ -1,0 +1,33 @@
+name: Security Baseline
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  secret-scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+      - uses: gitleaks/gitleaks-action@cb7149a9c3c4ab1acc95a652dbc5c2aad4499d8c # v2.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
+      - uses: anchore/sbom-action@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0.14.3
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: repo-sbom.json
+      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        with:
+          name: repo-sbom
+          path: repo-sbom.json

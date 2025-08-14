@@ -23,7 +23,7 @@ from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 from app.core.config import settings
 from app.core.database_sync import engine, get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, init_token_blacklist
 from app.api.v1.api import api_router
 from app.api.health import router as health_router
 from app.core.logging import setup_logging, logger
@@ -77,6 +77,30 @@ async def lifespan(app: FastAPI):
         logger.error(f"Ошибка подключения к базе данных: {e}")
         raise
     
+    # Инициализация Redis-блеклиста токенов (для logout/refresh rotation)
+    try:
+        if settings.REDIS_HOST and settings.REDIS_PORT is not None:
+            import redis  # lazy import
+
+            redis_client = redis.Redis(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                password=settings.REDIS_PASSWORD,
+                db=0,
+                socket_connect_timeout=2,
+                socket_timeout=2,
+            )
+            # Простая проверка соединения (не критично)
+            try:
+                redis_client.ping()
+                init_token_blacklist(redis_client)
+                logger.info("Token blacklist инициализирован (Redis)")
+            except Exception as ping_err:
+                logger.warning(f"Не удалось инициализировать Redis blacklist: {ping_err}")
+    except Exception as e:
+        # Никогда не блокируем запуск сервиса из-за Redis
+        logger.warning(f"Redis недоступен или не сконфигурирован: {e}")
+
     logger.info("Сервис запущен и готов к работе")
     
     yield

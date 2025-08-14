@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.6
 # Multi-stage build for optimized production image
 FROM python:3.12-slim as builder
 
@@ -32,7 +33,8 @@ WORKDIR /app
 
 # Copy and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --user -r requirements.txt
 
 # Production stage - minimal distroless-like image  
 FROM python:3.12-slim as production

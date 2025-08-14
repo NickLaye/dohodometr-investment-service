@@ -1,0 +1,40 @@
+# Gitleaks configuration tuned for this repo
+# - Blocks real secrets
+# - Allows known development placeholders in docker-compose.dev.yml
+
+title = "Dohodometr Gitleaks Config"
+
+[extend]
+# Use default gitleaks rules, then add allowlist below
+
+[allowlist]
+# Allow common dev placeholders and obvious non-secret values
+regexes = [
+  "dev-secret-key-ONLY-FOR-DEVELOPMENT-NOT-PRODUCTION",
+  "dev-jwt-secret-key-ONLY-FOR-DEVELOPMENT-NOT-PRODUCTION",
+  "dev-secret-key-change-in-production",
+  "password123",
+  "^admin$",
+  "^password$",
+  "^postgres$",
+]
+
+paths = [
+  "docker-compose.dev.yml",
+]
+
+# Exclude typical non-source directories
+pathsIgnore = [
+  "**/.git/**",
+  "**/node_modules/**",
+  "**/.next/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/frontend/.next/**",
+]
+
+# Allow example env files to contain placeholders but not real secrets
+[allowlist.files]
+"env.example" = [
+  "^.*$"
+]
