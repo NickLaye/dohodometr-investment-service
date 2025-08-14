@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.6
 # Multi-stage build for optimized production image
-FROM node:20-alpine AS dependencies
+FROM node:24-alpine AS dependencies
 
 # Build arguments
 ARG BUILD_DATE
@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev && npm cache clean --force
 
 # Development dependencies stage
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache libc6-compat
@@ -40,7 +40,7 @@ COPY . .
 RUN npm run build
 
 # Production stage - minimal alpine image
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 # Build and security metadata (OCI compatible)
 LABEL org.opencontainers.image.title="Dohodometr Frontend"
