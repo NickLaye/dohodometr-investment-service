@@ -1,3 +1,21 @@
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.git
+.gitignore
+tests
+docs
+.env*
+htmlcov
+*.sqlite3
+*.log
+*.coverage
+coverage.xml
+Dockerfile*
+docker-compose*
+README.md
 # Python
 __pycache__/
 *.py[cod]

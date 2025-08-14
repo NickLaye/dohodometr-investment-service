@@ -361,18 +361,4 @@ def get_current_user_info(
     return current_user
 
 
-@router.post("/logout")
-def logout(
-    current_user: User = Depends(get_current_user)
-) -> Any:
-    """
-    Выход из системы (добавление токена в черный список).
-    """
-    # TODO: Добавить токен в blacklist через Redis
-    
-    log_security_event(
-        "logout",
-        user_id=current_user.id
-    )
-    
-    return {"message": "Выход выполнен успешно"}
+# Удален дублирующийся /logout (реализован выше)
