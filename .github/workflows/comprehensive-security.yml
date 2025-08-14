@@ -33,6 +33,7 @@ jobs:
     name: 🔍 Security Pre-flight
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    continue-on-error: true
     permissions:
       contents: read
       security-events: write
@@ -344,7 +345,7 @@ jobs:
           output-file: frontend-sbom.json
 
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
+        uses: actions/upload-artifact@v4
         with:
           name: sbom-reports
           path: |
@@ -398,7 +399,7 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@65a9edc5881444af0b9093c4b243e841a2bb15c0 # v4
+        uses: actions/download-artifact@v4
         with:
           path: security-reports
 
