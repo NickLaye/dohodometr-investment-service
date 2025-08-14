@@ -209,13 +209,25 @@ export const createMockResponse = <T,>(data: T, status = 200) => ({
 });
 
 export const mockApiSuccess = <T,>(data: T) => {
-  (fetch as any).mockResolvedValueOnce(createMockResponse(data));
+  const f: any = (globalThis as any).fetch;
+  if (!f || typeof f.mockResolvedValueOnce !== 'function') {
+    vi.spyOn(globalThis as any, 'fetch').mockResolvedValueOnce(createMockResponse(data));
+  } else {
+    f.mockResolvedValueOnce(createMockResponse(data));
+  }
 };
 
 export const mockApiError = (status = 500, message = 'Internal Server Error') => {
-  (fetch as any).mockResolvedValueOnce(
-    createMockResponse({ error: message }, status)
-  );
+  const f: any = (globalThis as any).fetch;
+  if (!f || typeof f.mockResolvedValueOnce !== 'function') {
+    vi.spyOn(globalThis as any, 'fetch').mockResolvedValueOnce(
+      createMockResponse({ error: message }, status)
+    );
+  } else {
+    f.mockResolvedValueOnce(
+      createMockResponse({ error: message }, status)
+    );
+  }
 };
 
 // Helper to create auth context value
