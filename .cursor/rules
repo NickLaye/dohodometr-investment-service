@@ -119,8 +119,10 @@ npm run lint
 ⸻
 
 🔀 Git Workflow (обязательно)
-- База: `main` (защищённая, linear history, squash merge only)
-- Ветки: `feat|fix|docs|chore|perf|refactor|ci/<scope>-<short>`
-- Коммиты/PR заголовки: Conventional Commits `type(scope): subject`
-- Required checks на PR в `main`: backend-tests, frontend-tests, security, docker-build, quality-gate
-- Минимум 1 review (2 — для high‑risk/security/infra)
+- База: `main` (защищённая, linear history, Squash & Merge only). Merge‑коммиты запрещены; используем rebase.
+- Ветки: `feat|fix|docs|chore|perf|refactor|ci/<scope>-<short>` (например: `feat/auth-2fa`, `docs/rules-v3`).
+- Коммиты и заголовки PR: Conventional Commits `type(scope): subject`.
+  Примеры: `feat(auth): add 2FA TOTP flow`, `fix(api): return 400 for invalid code`, `docs(rules): introduce v3`.
+- Перед PR: `git fetch origin && git rebase origin/main`; локально зелёные проверки (линт/типы/тесты).
+- Required checks на PR в `main`: backend-tests, frontend-tests, security, docker-build, quality-gate.
+- Ревью: минимум 1 (2 — для high‑risk/security/infra). После merge — удалить feature‑ветку.
