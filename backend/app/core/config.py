@@ -67,7 +67,8 @@ class Settings(BaseSettings):
         "127.0.0.1", 
         "dohodometr.ru",
         "www.dohodometr.ru",
-        "api.dohodometr.ru"
+        "api.dohodometr.ru",
+        "testserver"
     ]
     
     @validator("CORS_ORIGINS", pre=True)

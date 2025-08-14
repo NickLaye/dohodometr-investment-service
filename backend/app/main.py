@@ -219,6 +219,11 @@ def create_application() -> FastAPI:
     # Экспорт OpenAPI схемы независимо от DEBUG флага для контракт-тестов
     if settings.API_V1_STR and app.openapi_url is None:
         app.openapi_url = "/openapi.json"
+        # Включаем UI для локальной отладки контрактов (не влияет на prod)
+        if app.docs_url is None:
+            app.docs_url = "/docs"
+        if app.redoc_url is None:
+            app.redoc_url = "/redoc"
     
     # API routes
     app.include_router(api_router, prefix=settings.API_V1_STR)
