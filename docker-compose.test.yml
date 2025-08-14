@@ -2,21 +2,6 @@
 name: dohodometr-test
 
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=test-secret
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    command: ["pytest", "-v", "--cov=app", "--cov-report=term-missing", "--maxfail=1"]
-
   postgres:
     image: postgres:16-alpine
     environment:
@@ -37,13 +22,37 @@ services:
       timeout: 5s
       retries: 10
 
+  backend:
+    image: python:3.12-slim
+    working_dir: /app
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=test-secret
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >-
+      sh -lc "python -m pip install --upgrade pip && 
+      apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && 
+      pip install -r requirements-dev.txt && 
+      pytest -v --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --maxfail=1"
+
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: node:20-alpine
+    working_dir: /app
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:8000
       - NODE_ENV=test
-    command: ["npm", "run", "test:coverage"]
+    volumes:
+      - ./frontend:/app
+    command: >-
+      sh -lc "npm ci --no-audit --no-fund && npm run test:ci"
 
 
