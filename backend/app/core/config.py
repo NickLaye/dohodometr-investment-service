@@ -266,3 +266,14 @@ if settings.ENVIRONMENT == "production":
     assert settings.MINIO_ACCESS_KEY not in ["admin", "minio_dev_only", "minio_dev_access_key"], "Установите надежный MINIO_ACCESS_KEY для production"
     assert len(settings.ENCRYPTION_SALT) >= 32, "ENCRYPTION_SALT должен быть не менее 32 символов для production"
     assert not settings.DEBUG, "Отключите DEBUG режим для production"
+
+
+def validate_production_config(s: Settings) -> None:
+    """Утилита для тестов: проверка строгих требований в production."""
+    if s.ENVIRONMENT != "production":
+        return
+    assert s.SECRET_KEY != "changeme", "SECRET_KEY должен быть установлен в production"
+    assert s.JWT_SECRET_KEY != "changeme", "JWT_SECRET_KEY должен быть установлен в production"
+    assert not s.DEBUG, "DEBUG должен быть выключен в production"
+    # Дополнительные базовые проверки
+    assert s.DATABASE_URL is not None or s.database_url_sync.startswith("postgresql://"), "DATABASE_URL должен быть настроен"
