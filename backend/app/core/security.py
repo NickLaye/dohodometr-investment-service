@@ -204,8 +204,11 @@ def create_refresh_token(subject: Union[str, Any]) -> str:
         )
 
 
-def verify_token(token: str, token_type: str = "access") -> dict:
-    """Проверка и декодирование JWT токена."""
+def verify_token(token: str, token_type: str = "access") -> Optional[dict]:
+    """Проверка и декодирование JWT токена.
+
+    Возвращает payload или None для совместимости с тестами.
+    """
     try:
         # Строгая проверка алгоритма для предотвращения algorithm confusion
         payload = jwt.decode(
@@ -217,20 +220,13 @@ def verify_token(token: str, token_type: str = "access") -> dict:
         
         # Проверяем тип токена
         if payload.get("type") != token_type:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Неверный тип токена"
-            )
+            return None
         
         return payload
         
     except JWTError as e:
         logger.warning(f"Ошибка проверки JWT токена: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Недействительный токен",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        return None
 
 
 # Функции для 2FA (TOTP)
@@ -319,6 +315,12 @@ def get_current_user(
     
     # Проверяем токен
     payload = verify_token(credentials.credentials, "access")
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Недействительный токен",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     user_id = payload.get("sub")
     jti = payload.get("jti")  # JWT ID для проверки revocation
     

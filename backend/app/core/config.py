@@ -89,20 +89,18 @@ class Settings(BaseSettings):
         min_length=12
     )
     DATABASE_ECHO: bool = False
-    DATABASE_URL: Optional[PostgresDsn] = None
+    DATABASE_URL: Optional[str] = None
     
     @validator("DATABASE_URL", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
-        if isinstance(v, str):
+    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> str:
+        if isinstance(v, str) and v:
             return v
-        return PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            user=values.get("DATABASE_USER"),
-            password=values.get("DATABASE_PASSWORD"),
-            host=values.get("DATABASE_HOST"),
-            port=str(values.get("DATABASE_PORT")),
-            path=f"/{values.get('DATABASE_NAME') or ''}",
-        )
+        user = values.get("DATABASE_USER")
+        password = values.get("DATABASE_PASSWORD")
+        host = values.get("DATABASE_HOST")
+        port = values.get("DATABASE_PORT")
+        name = values.get("DATABASE_NAME")
+        return f"postgresql://{user}:{password}@{host}:{port}/{name}"
     
     # Redis
     REDIS_HOST: str = "localhost"
