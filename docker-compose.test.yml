@@ -5,11 +5,11 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: investment_db
+      POSTGRES_DB: investment_db_test
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d investment_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d investment_db_test"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -27,7 +27,7 @@ services:
     working_dir: /app
     environment:
       - ENVIRONMENT=testing
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/investment_db_test
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=test-secret
       - PYTHONDONTWRITEBYTECODE=1
