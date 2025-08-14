@@ -29,7 +29,7 @@ jobs:
           path: .
           format: cyclonedx-json
           output-file: repo-sbom.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4.6.2
         with:
           name: repo-sbom
           path: repo-sbom.json
