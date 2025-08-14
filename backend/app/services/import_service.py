@@ -12,7 +12,7 @@ from io import StringIO
 from abc import ABC, abstractmethod
 
 import pandas as pd
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.models.transaction import TransactionType
 from app.repositories.transaction import TransactionRepository
@@ -261,7 +261,7 @@ class SberbankImportAdapter(BrokerImportAdapter):
 class ImportService:
     """Сервис для импорта данных от брокеров."""
     
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.db = db
         self.transaction_repo = TransactionRepository(db)
         
@@ -333,7 +333,7 @@ class ImportService:
                 # Проверяем дедупликацию по хешу
                 source_hash = tx_data.get('source_hash')
                 if source_hash:
-                    is_duplicate = await self.transaction_repo.deduplicate_by_hash(
+                    is_duplicate = self.transaction_repo.deduplicate_by_hash(
                         account_id, source_hash
                     )
                     if is_duplicate:
@@ -348,7 +348,7 @@ class ImportService:
                     instrument_id = await self._get_or_create_instrument(ticker, tx_data)
                 
                 # Создаем транзакцию
-                transaction = await self.transaction_repo.create(
+                transaction = self.transaction_repo.create(
                     account_id=account_id,
                     instrument_id=instrument_id,
                     ts=tx_data['ts'],
