@@ -98,7 +98,7 @@ jobs:
           npm audit --audit-level=moderate --json > npm-audit-report.json
         continue-on-error: true
       - name: Upload security reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: security-reports
