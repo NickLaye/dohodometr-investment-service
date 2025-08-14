@@ -40,7 +40,7 @@ argon2_hasher = PasswordHasher(
 )
 
 # HTTP Bearer схема для JWT токенов
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 # Настройка шифрования для чувствительных данных
 def get_encryption_key() -> bytes:
@@ -306,12 +306,12 @@ def decrypt_sensitive_data(encrypted_data: str) -> str:
 
 # Dependency для получения текущего пользователя
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ):
     """Dependency для получения текущего аутентифицированного пользователя."""
     # Разрешаем bypass аутентификации в тестовой среде для контракт-тестов
-    if settings.ENVIRONMENT.lower() == "testing":
+    if settings.ENVIRONMENT.lower() == "testing" and not credentials:
         return SimpleNamespace(id=1, is_active=True, is_superuser=False, email="test@example.com")
 
     # Проверяем токен
