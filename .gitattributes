@@ -1,66 +1,20 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalize line endings
+* text=auto eol=lf
 
-# Source code
-*.py text diff=python
-*.js text
-*.ts text
-*.tsx text
-*.jsx text
-*.css text
-*.scss text
-*.sass text
-*.less text
-*.html text
-*.xml text
-*.json text
-*.yaml text
-*.yml text
-*.toml text
-*.ini text
-*.cfg text
-*.conf text
-
-# Documentation
-*.md text
-*.txt text
-*.rst text
-
-# Scripts
-*.sh text eol=lf
-*.bat text eol=crlf
-
-# Binary files
+# Treat images and binary files appropriately
 *.png binary
 *.jpg binary
 *.jpeg binary
 *.gif binary
 *.ico binary
-*.mov binary
-*.mp4 binary
-*.mp3 binary
-*.flv binary
-*.fla binary
-*.swf binary
-*.gz binary
-*.zip binary
-*.7z binary
-*.ttf binary
-*.eot binary
-*.woff binary
-*.woff2 binary
-*.pyc binary
 *.pdf binary
-
-# Archives
-*.7z binary
-*.gz binary
-*.tar binary
-*.zip binary
-
-# Fonts
-*.ttf binary
-*.eot binary
-*.otf binary
 *.woff binary
 *.woff2 binary
+*.ttf binary
+*.otf binary
+
+# Do not diff lock files
+frontend/package-lock.json -diff
+
+# Ensure shell scripts keep executable bit if set
+*.sh text eol=lf
