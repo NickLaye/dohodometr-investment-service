@@ -4,6 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from fastapi.responses import Response
 
 from app.core.security import get_current_user
 from app.core.database_sync import get_db
@@ -18,13 +19,15 @@ router = APIRouter()
 class PortfolioCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    base_currency: str = "RUB"
+    base_currency: Optional[str] = None
+    currency: Optional[str] = None  # alias for base_currency
 
 
 class PortfolioUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     base_currency: Optional[str] = None
+    currency: Optional[str] = None  # alias for base_currency
 
 
 class PortfolioResponse(BaseModel):
@@ -32,6 +35,7 @@ class PortfolioResponse(BaseModel):
     name: str
     description: Optional[str]
     base_currency: str
+    currency: str
     is_active: bool
     total_value: Optional[float]
     total_cost: Optional[float]
@@ -59,6 +63,7 @@ def get_portfolios(
             name=p.name,
             description=p.description,
             base_currency=p.base_currency,
+            currency=p.base_currency,
             is_active=p.is_active,
             total_value=float(p.total_value) if p.total_value else None,
             total_cost=float(p.total_cost) if p.total_cost else None,
@@ -80,8 +85,15 @@ def create_portfolio(
     """Создание нового портфеля."""
     portfolio_repo = PortfolioRepository(db)
     
+    base_currency = portfolio_data.base_currency or portfolio_data.currency or "RUB"
+    schema = PortfolioCreateSchema(
+        name=portfolio_data.name,
+        description=portfolio_data.description,
+        base_currency=base_currency,
+    )
+
     portfolio = portfolio_repo.create(
-        PortfolioCreateSchema(**portfolio_data.dict()),
+        schema,
         user_id=current_user.id,
     )
     
@@ -90,6 +102,7 @@ def create_portfolio(
         name=portfolio.name,
         description=portfolio.description,
         base_currency=portfolio.base_currency,
+        currency=portfolio.base_currency,
         is_active=portfolio.is_active,
         total_value=float(portfolio.total_value) if portfolio.total_value else None,
         total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
@@ -127,6 +140,7 @@ def get_portfolio(
         name=portfolio.name,
         description=portfolio.description,
         base_currency=portfolio.base_currency,
+        currency=portfolio.base_currency,
         is_active=portfolio.is_active,
         total_value=float(portfolio.total_value) if portfolio.total_value else None,
         total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
@@ -160,14 +174,19 @@ def update_portfolio(
             detail="Нет доступа к этому портфелю"
         )
     
-    # Обновляем только заданные поля
-    updated = portfolio_repo.update(portfolio_id, PortfolioUpdateSchema(**portfolio_data.dict(exclude_unset=True)))
+    # Собираем обновления
+    update_payload = portfolio_data.dict(exclude_unset=True)
+    if "currency" in update_payload and "base_currency" not in update_payload:
+        update_payload["base_currency"] = update_payload.pop("currency")
+    
+    updated = portfolio_repo.update(portfolio_id, PortfolioUpdateSchema(**update_payload))
     
     return PortfolioResponse(
         id=updated.id,
         name=updated.name,
         description=updated.description,
         base_currency=updated.base_currency,
+        currency=updated.base_currency,
         is_active=updated.is_active,
         total_value=float(updated.total_value) if updated.total_value else None,
         total_cost=float(updated.total_cost) if updated.total_cost else None,
@@ -208,8 +227,7 @@ def delete_portfolio(
             detail="Ошибка удаления портфеля"
         )
     
-    # Для совместимости с тестом интеграции ожидающим 204 — возвращаем пустой ответ с 204 в роутере верхнего уровня
-    return {"message": "Портфель успешно удален"}
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{portfolio_id}/summary")

@@ -93,6 +93,7 @@ class Portfolio(Base):
         back_populates="portfolio",
         cascade="all, delete-orphan"
     )
+    user: Mapped["User"] = relationship("User", back_populates="portfolios")
     
     # Ограничения и индексы
     __table_args__ = (

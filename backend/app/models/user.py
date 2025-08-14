@@ -82,6 +82,7 @@ class User(Base):
 	# portfolios: relationship закомментирован, если понадобится включим
 	crypto_exchanges = relationship("CryptoExchange", back_populates="user")
 	crypto_accounts = relationship("CryptoAccount", back_populates="user")
+	portfolios = relationship("Portfolio", back_populates="user")
 	
 	# Ограничения и индексы
 	__table_args__ = (
