@@ -67,3 +67,8 @@ __pycache__/
 *.tar.gz
 *.zip
 server_backup/
+
+# Coverage & reports
+backend/htmlcov/
+backend/coverage.xml
+reports/

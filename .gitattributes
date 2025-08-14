@@ -15,6 +15,7 @@
 
 # Do not diff lock files
 frontend/package-lock.json -diff
+backend/coverage.xml -diff
 
 # Ensure shell scripts keep executable bit if set
 *.sh text eol=lf
