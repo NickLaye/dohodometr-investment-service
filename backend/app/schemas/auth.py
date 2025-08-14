@@ -7,6 +7,13 @@ from pydantic import BaseModel, EmailStr, validator
 from app.core.config import settings
 
 
+class UserCreate(BaseModel):
+    email: EmailStr
+    username: str
+    password: str
+    full_name: Optional[str] = None
+
+
 class UserLogin(BaseModel):
     """Схема для входа пользователя."""
     email: EmailStr

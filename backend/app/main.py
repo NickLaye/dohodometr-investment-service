@@ -216,10 +216,11 @@ def create_application() -> FastAPI:
     # Health check routes (no prefix for Docker health checks)
     app.include_router(health_router)
 
-    # Экспорт OpenAPI схемы независимо от DEBUG флага для контракт-тестов
-    if settings.API_V1_STR and app.openapi_url is None:
-        app.openapi_url = "/openapi.json"
-    
+    # Стабильная раздача OpenAPI по корню для тестов контрактов
+    @app.get("/openapi.json", include_in_schema=False)
+    async def openapi_spec():
+        return JSONResponse(app.openapi())
+
     # API routes
     app.include_router(api_router, prefix=settings.API_V1_STR)
     

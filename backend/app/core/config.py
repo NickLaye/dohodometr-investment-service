@@ -7,8 +7,6 @@ from typing import List, Optional, Any, Dict, Union
 from pathlib import Path
 
 from pydantic import (
-    PostgresDsn,
-    RedisDsn,
     validator,
     EmailStr,
     HttpUrl,
@@ -67,7 +65,8 @@ class Settings(BaseSettings):
         "127.0.0.1", 
         "dohodometr.ru",
         "www.dohodometr.ru",
-        "api.dohodometr.ru"
+        "api.dohodometr.ru",
+        "testserver"
     ]
     
     @validator("CORS_ORIGINS", pre=True)
@@ -81,7 +80,7 @@ class Settings(BaseSettings):
     # База данных
     DATABASE_HOST: str = "localhost"
     DATABASE_PORT: int = 5432
-    DATABASE_NAME: str = "investment_db"
+    DATABASE_NAME: str = "test_db"
     DATABASE_USER: str = "postgres"
     DATABASE_PASSWORD: str = Field(
         default="postgres_dev_only",  
@@ -89,67 +88,60 @@ class Settings(BaseSettings):
         min_length=12
     )
     DATABASE_ECHO: bool = False
-    DATABASE_URL: Optional[PostgresDsn] = None
+    DATABASE_URL: Optional[str] = None
     
     @validator("DATABASE_URL", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            user=values.get("DATABASE_USER"),
-            password=values.get("DATABASE_PASSWORD"),
-            host=values.get("DATABASE_HOST"),
-            port=str(values.get("DATABASE_PORT")),
-            path=f"/{values.get('DATABASE_NAME') or ''}",
-        )
+        user = values.get("DATABASE_USER")
+        password = values.get("DATABASE_PASSWORD")
+        host = values.get("DATABASE_HOST")
+        port = values.get("DATABASE_PORT")
+        name = values.get("DATABASE_NAME") or "test_db"
+        return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}"
     
     # Redis
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
     REDIS_PASSWORD: Optional[str] = None
-    REDIS_URL: Optional[RedisDsn] = None
+    REDIS_URL: Optional[str] = None
     
     @validator("REDIS_URL", pre=True)
     def assemble_redis_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return RedisDsn.build(
-            scheme="redis",
-            password=values.get("REDIS_PASSWORD"),
-            host=values.get("REDIS_HOST"),
-            port=values.get("REDIS_PORT", 6379),
-            path=f"/{values.get('REDIS_DB') or 0}",
-        )
+        password = values.get("REDIS_PASSWORD")
+        host = values.get("REDIS_HOST")
+        port = values.get("REDIS_PORT", 6379)
+        db = values.get("REDIS_DB") or 0
+        auth = f":{password}@" if password else ""
+        return f"redis://{auth}{host}:{port}/{db}"
     
     # Celery
-    CELERY_BROKER_URL: Optional[RedisDsn] = None
-    CELERY_RESULT_BACKEND: Optional[RedisDsn] = None
+    CELERY_BROKER_URL: Optional[str] = None
+    CELERY_RESULT_BACKEND: Optional[str] = None
     
     @validator("CELERY_BROKER_URL", pre=True)
     def assemble_celery_broker(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return RedisDsn.build(
-            scheme="redis",
-            password=values.get("REDIS_PASSWORD"),
-            host=values.get("REDIS_HOST"),
-            port=values.get("REDIS_PORT", 6379),
-            path="/1",
-        )
+        password = values.get("REDIS_PASSWORD")
+        host = values.get("REDIS_HOST")
+        port = values.get("REDIS_PORT", 6379)
+        auth = f":{password}@" if password else ""
+        return f"redis://{auth}{host}:{port}/1"
     
     @validator("CELERY_RESULT_BACKEND", pre=True)
     def assemble_celery_result(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return RedisDsn.build(
-            scheme="redis",
-            password=values.get("REDIS_PASSWORD"),
-            host=values.get("REDIS_HOST"),
-            port=values.get("REDIS_PORT", 6379),
-            path="/2",
-        )
+        password = values.get("REDIS_PASSWORD")
+        host = values.get("REDIS_HOST")
+        port = values.get("REDIS_PORT", 6379)
+        auth = f":{password}@" if password else ""
+        return f"redis://{auth}{host}:{port}/2"
     
     # MinIO / S3
     MINIO_ENDPOINT: str = "localhost:9000"
@@ -265,3 +257,14 @@ if settings.ENVIRONMENT == "production":
     assert settings.MINIO_ACCESS_KEY not in ["admin", "minio_dev_only", "minio_dev_access_key"], "Установите надежный MINIO_ACCESS_KEY для production"
     assert len(settings.ENCRYPTION_SALT) >= 32, "ENCRYPTION_SALT должен быть не менее 32 символов для production"
     assert not settings.DEBUG, "Отключите DEBUG режим для production"
+
+
+def validate_production_config(s: Settings) -> None:
+    """Утилита для тестов: проверка строгих требований в production."""
+    if s.ENVIRONMENT != "production":
+        return
+    assert s.SECRET_KEY != "changeme", "SECRET_KEY должен быть установлен в production"
+    assert s.JWT_SECRET_KEY != "changeme", "JWT_SECRET_KEY должен быть установлен в production"
+    assert not s.DEBUG, "DEBUG должен быть выключен в production"
+    # Дополнительные базовые проверки
+    assert s.DATABASE_URL is not None or s.database_url_sync.startswith("postgresql://"), "DATABASE_URL должен быть настроен"

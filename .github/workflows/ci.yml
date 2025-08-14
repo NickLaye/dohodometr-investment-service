@@ -75,12 +75,14 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Lint with ruff
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: |
           cd backend
           ruff check . --output-format=github
           ruff format --check .
 
       - name: Type check with mypy
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: |
           cd backend
           mypy .

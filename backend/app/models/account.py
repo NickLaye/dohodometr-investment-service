@@ -68,33 +68,15 @@ class Account(Base):
         nullable=False
     )
     
-    # Отношения (временно закомментированы)
-    # portfolio: Mapped["Portfolio"] = relationship("Portfolio", back_populates="accounts")
-    
-    # transactions: Mapped[List["Transaction"]] = relationship(
-    #     "Transaction",
-    #     back_populates="account",
-    #     cascade="all, delete-orphan"
-    # )
-    
-    # holdings: Mapped[List["Holding"]] = relationship(
-    #     "Holding",
-    #     back_populates="account",
-    #     cascade="all, delete-orphan"
-    # )
-    
-    # cashflows: Mapped[List["Cashflow"]] = relationship(
-    #     "Cashflow",
-    #     back_populates="account",
-    #     cascade="all, delete-orphan"
-    # )
+    # Отношения
+    portfolio: Mapped["Portfolio"] = relationship("Portfolio", back_populates="accounts")
     
     # Ограничения и индексы
     __table_args__ = (
         Index('ix_accounts_portfolio_active', 'portfolio_id', 'is_active'),
         Index('ix_accounts_broker', 'broker'),
         CheckConstraint('length(name) >= 1', name='ck_accounts_name_not_empty'),
-        CheckConstraint('currency ~ \'^[A-Z]{3}$\'', name='ck_accounts_currency_format'),
+        CheckConstraint('currency ~ "^[A-Z]{3}$"', name='ck_accounts_currency_format'),
     )
     
     def __repr__(self) -> str:
