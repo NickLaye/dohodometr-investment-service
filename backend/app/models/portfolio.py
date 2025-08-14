@@ -9,7 +9,7 @@ from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, Text, DECIMAL,
     ForeignKey, JSON, CheckConstraint, Index
 )
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import relationship, Mapped, mapped_column, synonym
 from sqlalchemy.sql import func
 
 from app.core.database_sync import Base
@@ -22,7 +22,9 @@ class Portfolio(Base):
     
     # Основные поля
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    # Храним колонку с именем user_id и даём совместимые атрибуты user_id/owner_id
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    owner_id = synonym("user_id")
     
     # Основная информация
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -80,25 +82,22 @@ class Portfolio(Base):
     # Время последнего пересчета метрик
     metrics_calculated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
-    # Отношения (временно закомментированы)
-    # owner: Mapped["User"] = relationship("User", back_populates="portfolios")
-    
-    # accounts: Mapped[List["Account"]] = relationship(
-    #     "Account",
-    #     back_populates="portfolio",
-    #     cascade="all, delete-orphan"
-    # )
-    
-    # goals: Mapped[List["Goal"]] = relationship(
-    #     "Goal",
-    #     back_populates="portfolio",
-    #     cascade="all, delete-orphan"
-    # )
+    # Отношения
+    accounts: Mapped[List["Account"]] = relationship(
+        "Account",
+        back_populates="portfolio",
+        cascade="all, delete-orphan"
+    )
+    cashflows: Mapped[List["Cashflow"]] = relationship(
+        "Cashflow",
+        back_populates="portfolio",
+        cascade="all, delete-orphan"
+    )
     
     # Ограничения и индексы
     __table_args__ = (
         # Составной индекс для поиска портфелей пользователя
-        Index('ix_portfolios_owner_active', 'owner_id', 'is_active'),
+        Index('ix_portfolios_owner_active', 'user_id', 'is_active'),
         
         # Индекс для публичных портфелей
         Index('ix_portfolios_public', 'is_public', 'is_active'),
@@ -108,13 +107,13 @@ class Portfolio(Base):
         
         # Проверочные ограничения
         CheckConstraint('length(name) >= 1', name='ck_portfolios_name_not_empty'),
-        CheckConstraint('base_currency ~ \'^[A-Z]{3}$\'', name='ck_portfolios_base_currency_format'),
+        CheckConstraint('base_currency ~ "^[A-Z]{3}$"', name='ck_portfolios_base_currency_format'),
         CheckConstraint('total_value >= 0', name='ck_portfolios_total_value_positive'),
         CheckConstraint('total_cost >= 0', name='ck_portfolios_total_cost_positive'),
     )
     
     def __repr__(self) -> str:
-        return f"<Portfolio(id={self.id}, name='{self.name}', owner_id={self.owner_id})>"
+        return f"<Portfolio(id={self.id}, name='{self.name}', user_id={self.user_id})>"
     
     @property
     def pnl_percent(self) -> Optional[Decimal]:
@@ -208,7 +207,7 @@ class PortfolioBenchmark(Base):
         nullable=False
     )
     
-    # Отношения (временно закомментированы)
+    # Отношения (опционально)
     # portfolio: Mapped["Portfolio"] = relationship("Portfolio")
     # benchmark: Mapped["Benchmark"] = relationship("Benchmark")
     

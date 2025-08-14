@@ -10,6 +10,7 @@ from app.core.database_sync import get_db
 from app.models.user import User
 from app.repositories.portfolio import PortfolioRepository
 from app.services.portfolio_analytics import PortfolioAnalyticsService
+from app.schemas.portfolio import PortfolioCreate as PortfolioCreateSchema, PortfolioUpdate as PortfolioUpdateSchema
 
 router = APIRouter()
 
@@ -80,10 +81,8 @@ def create_portfolio(
     portfolio_repo = PortfolioRepository(db)
     
     portfolio = portfolio_repo.create(
-        owner_id=current_user.id,
-        name=portfolio_data.name,
-        description=portfolio_data.description,
-        base_currency=portfolio_data.base_currency
+        PortfolioCreateSchema(**portfolio_data.dict()),
+        user_id=current_user.id,
     )
     
     return PortfolioResponse(
@@ -117,7 +116,7 @@ def get_portfolio(
             detail="Портфель не найден"
         )
     
-    if portfolio.owner_id != current_user.id:
+    if portfolio.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Нет доступа к этому портфелю"
@@ -155,28 +154,27 @@ def update_portfolio(
             detail="Портфель не найден"
         )
     
-    if portfolio.owner_id != current_user.id:
+    if portfolio.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Нет доступа к этому портфелю"
         )
     
     # Обновляем только заданные поля
-    update_data = portfolio_data.dict(exclude_unset=True)
-    portfolio = portfolio_repo.update(portfolio_id, **update_data)
+    updated = portfolio_repo.update(portfolio_id, PortfolioUpdateSchema(**portfolio_data.dict(exclude_unset=True)))
     
     return PortfolioResponse(
-        id=portfolio.id,
-        name=portfolio.name,
-        description=portfolio.description,
-        base_currency=portfolio.base_currency,
-        is_active=portfolio.is_active,
-        total_value=float(portfolio.total_value) if portfolio.total_value else None,
-        total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
-        total_pnl=float(portfolio.total_pnl) if portfolio.total_pnl else None,
-        total_pnl_percent=float(portfolio.total_pnl_percent) if portfolio.total_pnl_percent else None,
-        created_at=portfolio.created_at.isoformat(),
-        updated_at=portfolio.updated_at.isoformat()
+        id=updated.id,
+        name=updated.name,
+        description=updated.description,
+        base_currency=updated.base_currency,
+        is_active=updated.is_active,
+        total_value=float(updated.total_value) if updated.total_value else None,
+        total_cost=float(updated.total_cost) if updated.total_cost else None,
+        total_pnl=float(updated.total_pnl) if updated.total_pnl else None,
+        total_pnl_percent=float(updated.total_pnl_percent) if updated.total_pnl_percent else None,
+        created_at=updated.created_at.isoformat(),
+        updated_at=updated.updated_at.isoformat()
     )
 
 
@@ -196,7 +194,7 @@ def delete_portfolio(
             detail="Портфель не найден"
         )
     
-    if portfolio.owner_id != current_user.id:
+    if portfolio.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Нет доступа к этому портфелю"
@@ -210,6 +208,7 @@ def delete_portfolio(
             detail="Ошибка удаления портфеля"
         )
     
+    # Для совместимости с тестом интеграции ожидающим 204 — возвращаем пустой ответ с 204 в роутере верхнего уровня
     return {"message": "Портфель успешно удален"}
 
 
@@ -230,7 +229,7 @@ def get_portfolio_summary(
             detail="Портфель не найден"
         )
     
-    if portfolio.owner_id != current_user.id:
+    if portfolio.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Нет доступа к этому портфелю"
