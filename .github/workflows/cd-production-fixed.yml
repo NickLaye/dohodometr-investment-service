@@ -109,22 +109,39 @@ jobs:
     needs: build-and-push
     
     steps:
+      - name: Normalize backend image ref (first tag or digest)
+        id: beimg
+        run: |
+          # Use first tag from metadata outputs (newline/comma separated) or fallback to backend digest
+          TAGS="${{ needs.build-and-push.outputs.backend-image }}"
+          FIRST=$(echo "$TAGS" | tr ', ' '\n' | head -n 1)
+          if [ -z "$FIRST" ]; then FIRST=${{ needs.build-and-push.outputs.image-digest }}; fi
+          echo "ref=$FIRST" >> "$GITHUB_OUTPUT"
+
       - name: Run Trivy vulnerability scanner on backend
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-and-push.outputs.backend-image }}
+          image-ref: ${{ steps.beimg.outputs.ref }}
           format: 'sarif'
           output: 'backend-trivy-results.sarif'
+
+      - name: Normalize frontend image ref (first tag or digest)
+        id: feimg
+        run: |
+          TAGS="${{ needs.build-and-push.outputs.frontend-image }}"
+          FIRST=$(echo "$TAGS" | tr ', ' '\n' | head -n 1)
+          if [ -z "$FIRST" ]; then FIRST=${{ needs.build-and-push.outputs.image-digest }}; fi
+          echo "ref=$FIRST" >> "$GITHUB_OUTPUT"
 
       - name: Run Trivy vulnerability scanner on frontend
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-and-push.outputs.frontend-image }}
+          image-ref: ${{ steps.feimg.outputs.ref }}
           format: 'sarif'
           output: 'frontend-trivy-results.sarif'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'backend-trivy-results.sarif'
