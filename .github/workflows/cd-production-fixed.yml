@@ -14,6 +14,9 @@ on:
         options:
           - production
           - staging
+      dummy:
+        description: 'Manual trigger placeholder'
+        required: false
 
 env:
   REGISTRY: ghcr.io
@@ -188,6 +191,43 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   create-release:
+  docker-build:
+    name: Docker Build (alias)
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: always()
+    steps:
+      - name: Mirror upstream docker build status
+        run: |
+          echo "Upstream: ${{ needs.build-and-push.result }}"
+          test "${{ needs.build-and-push.result }}" = "success"
+
+  security:
+    name: Security (alias)
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    if: always()
+    steps:
+      - name: Mirror upstream security scan status
+        run: |
+          echo "Upstream: ${{ needs.security-scan.result }}"
+          test "${{ needs.security-scan.result }}" = "success"
+
+  quality-gate:
+    name: Quality Gate (alias)
+    runs-on: ubuntu-latest
+    needs: [docker-build, security]
+    if: always()
+    steps:
+      - name: Check required job results
+        run: |
+          echo "Docker Build: ${{ needs.docker-build.result }}"
+          echo "Security: ${{ needs.security.result }}"
+          if [[ "${{ needs.docker-build.result }}" != "success" || "${{ needs.security.result }}" != "success" ]]; then
+            echo "❌ Quality gate failed"
+            exit 1
+          fi
+          echo "✅ Quality gate passed"
     name: Create Release
     runs-on: ubuntu-latest
     needs: [deploy-production]
