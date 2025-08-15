@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.0 (2025-08-15)
+
+
+### Features
+
+* add comprehensive deployment automation and security tools ([4b361a7](https://github.com/NickLaye/dohodometr-investment-service/commit/4b361a7bd3b0b30cbab3c9124efebec04acb0ff9))
+* add comprehensive health monitoring and fix Docker issues ([7acf6c3](https://github.com/NickLaye/dohodometr-investment-service/commit/7acf6c39d0c312a4a524bbe2b351df32c5797e1d))
+* add comprehensive security tooling and monitoring stack ([f4b8d62](https://github.com/NickLaye/dohodometr-investment-service/commit/f4b8d624c8000b14b81a537c40f76169a6409a96))
+* Implement new Dohodometr design system ([5802b0e](https://github.com/NickLaye/dohodometr-investment-service/commit/5802b0ed181c89b008c96e8021f97950f42d6f14))
+* Migrate entire backend to synchronous architecture ([bd70e72](https://github.com/NickLaye/dohodometr-investment-service/commit/bd70e7253e5adebfd9636e68bfc07165a6fd3b48))
+
+
+### Bug Fixes
+
+* Repair GitHub Actions workflow YAML syntax and deployment paths ([bacbb5a](https://github.com/NickLaye/dohodometr-investment-service/commit/bacbb5ad2d11eaf499c0e4cfad41e653828fec4c))
+* update GitHub Actions to latest stable versions ([07a2fd1](https://github.com/NickLaye/dohodometr-investment-service/commit/07a2fd10a566668a4a11999dd8fed23dd11aa522))
+* добавить поле name в Docker Compose файлы ([49a82b8](https://github.com/NickLaye/dohodometr-investment-service/commit/49a82b8ab57fccda0af3341b5539fe0a0a397a58))
+* исправить критические проблемы CI/CD pipeline ([f1a6665](https://github.com/NickLaye/dohodometr-investment-service/commit/f1a666579f462acaf310dd6c63bd52f05ebe2b54))
+* исправить критические проблемы Docker build в CI/CD\n\nДВА УРОВНЯ ИСПРАВЛЕНИЙ:\n\n🐳 DOCKER BUILD ISSUES:\n- Исправлен устаревший npm синтаксис: --only=production → --omit=dev \n- Создана отсутствующая папка frontend/public/ с базовыми ресурсами\n- Исправлен .dockerignore: убрано исключение папки public\n- Docker build теперь проходит успешно (100.2s, все 24/24 этапа)\n\n⚛️ NEXT.JS SSR PRERENDER FIXES:\n- Сделали useAuth SSR-безопасным с fallback для server-side\n- Добавили export const dynamic = 'force-dynamic' для динамических страниц\n- Исправлена ошибка 'useAuth must be used within AuthProvider' при prerender\n- Все страницы (/, /auth/*, /app, /tax-demo) теперь собираются корректно\n\n📁 СОЗДАННЫЕ ФАЙЛЫ:\n- frontend/public/favicon.svg - базовая иконка\n- frontend/public/favicon.ico - для браузерной совместимости  \n- frontend/public/robots.txt - для SEO\n\n�� РЕЗУЛЬТАТ:\n- 'Build and Push Images' job больше не падает\n- CI/CD pipeline готов к успешному прохождению\n- Все red commits должны стать green ✅\n\nТестировано локально: Docker build успешен ([606688a](https://github.com/NickLaye/dohodometr-investment-service/commit/606688a3784971aa2b4243664e8a0b8f445a4659))
+* обновить docker-compose команды до Docker Compose v2 ([1a919ee](https://github.com/NickLaye/dohodometr-investment-service/commit/1a919ee1f831faa892d41b397e824bf019938b3b))
+
 ## [Unreleased]
 
 ### 🚀 Added
