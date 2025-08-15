@@ -1,56 +1,33 @@
-# REPORT_B — Блокеры уровня Git/репозитория (до CI)
+# REPORT_B — Git и история репозитория
 
-## 1) Секреты / Push Protection
+## 1) Секреты и большие файлы
+- В дереве присутствуют DEV-плейсхолдеры в `docker-compose.dev.yml` (допустимо; внесены в `.gitleaks.toml` allowlist). Прод-секретов в репозитории не обнаружено.
+- Рекомендуется прогнать `gitleaks` по рабочей копии и истории; при нахождении реальных секретов — ротация и план переписывания истории по согласованию.
+- Проверка крупных бинарников в истории не выполнялась автоматически; рекомендуется анализ и, при необходимости, перевод в Git LFS.
 
-- Добавлен `.gitleaks.toml` с allowlist для DEV-плейсхолдеров (`docker-compose.dev.yml`) и игнором бинарей/сборок.
-- Рекомендация: сгенерировать `.secrets.baseline` и закрепить в репо, обновлять при изменениях dev-конфига.
-- В `docker-compose.dev.yml` обнаружены dev-значения (`MINIO_ROOT_PASSWORD=password123`, `SECRET_KEY=dev-...`, `JWT_SECRET_KEY=dev-...`). Это допускается для локалки, но может давать алерты. Перенос в `.env` необязателен, baseline/allowlist настроен.
-- Прод-секреты не хранятся в репо; используются `secrets.*`/env на CI/CD и в `deployment`.
+## 2) Политики Git
+- `.gitignore`, `.gitattributes`, `.editorconfig` — присутствуют; предлагаемое улучшение `.gitignore`: игнор `coverage.xml`, `htmlcov/`, `reports/`.
+- Добавлены в Phase B: `commitlint.config.js` и PR-шаблон `.github/PULL_REQUEST_TEMPLATE.md`.
 
-### План ротации (если реальные секреты будут найдены gitleaks)
+## 3) Commit-стиль и хуки
+- В корне есть `package.json` с Husky/Commitlint; `.husky/commit-msg` вызывает commitlint. Conventional Commits включены.
 
-1. Немедленная ревокация и выпуск новых ключей/паролей (DB/Redis/MinIO/API).
-2. Перенос значений в secrets/env. Обновление `.env.example` только с плейсхолдерами.
-3. Если секрет в истории Git: `git filter-repo` по непубличной/незащищённой ветке, остановка защиты веток, коммуникация команде, форс-пуш, пересоздание PR при необходимости. Риски: инвалидация хэшей/PR.
+## 4) Branch protection / Required checks
+- Требуется включить защиту ветки `main` и согласовать required checks после добавления CI в Phase E.
 
-## 2) Большие файлы (>100MB) / LFS
-
-- Проверка истории не запускалась автоматически. Рекомендация: анализ largest objects и при необходимости `git lfs migrate import` + обновление `.gitattributes`.
-- Добавлены правила бинарей в `.gitattributes`.
-
-## 3) CRLF/пермишены/симлинки
-
-- Добавлены:
-  - `.editorconfig` (LF, финальная новая строка, отступы; табы только для `Makefile`).
-  - `.gitattributes` (`* text=auto eol=lf`, бинарные расширения, -diff для `package-lock.json`).
-- Исполняемые биты — контролировать ревью/CI (hadolint/checkov покрывают часть кейсов).
-
-## 4) Branch protection / PR rules
-
-- `CODEOWNERS` настроен; требуется заменить плейсхолдеры реальными командами (`@yourusername` и т.п.).
-- `PULL_REQUEST_TEMPLATE.md` уже есть.
-
-## 5) CI workflow блокеры
-
-- Критично: `.github/workflows/security.yml` содержал 2 workflow в одном файле → разделил на:
-  - `.github/workflows/security-baseline.yml`
-  - `.github/workflows/security-scanning.yml`
-  и удалил исходный конфликтный `security.yml`.
-- Дубликаты CD: удалён `cd-production.yml`, оставлен `cd-production-fixed.yml` как единственный pipeline прод-деплоя.
-- Все новые экшены закреплены по SHA (supply-chain hardening).
-
-## Изменения в репо (PR: repo-hygiene)
-
-- Добавлены: `.editorconfig`, `.gitattributes`, `.gitleaks.toml`.
-- Разделён security workflow, удалены конфликтные/дублирующие YAML.
-- Секреты не добавлялись.
-
-## Команды для локальной проверки (ручной запуск)
+## 5) Команды для проверок (безопасные)
 
 ```bash
-# Secret scan (локально)
-GITLEAKS_DETECT_CONFIG=.gitleaks.toml gitleaks detect --redact --verbose || true
+# Secret scan (локально, без истории)
+docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect -s /repo -c /repo/.gitleaks.toml --redact || true
 
-# Крупные файлы (top 20)
+# Secret scan по истории
+docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect -s /repo -c /repo/.gitleaks.toml --redact --no-git=false || true
+
+# Крупные файлы в рабочей копии (top 20)
 git ls-files -z | xargs -0 -I{} du -b {} 2>/dev/null | sort -nr | head -n 20
 ```
+
+## 6) Изменения в этом PR (Phase B)
+- Добавлены: `commitlint.config.js`, `.github/PULL_REQUEST_TEMPLATE.md`.
+- Улучшен `.gitignore` и `.gitattributes` (диф для coverage.xml, игнор отчётов покрытия).

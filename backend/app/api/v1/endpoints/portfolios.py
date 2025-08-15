@@ -4,6 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from app.schemas.portfolio import PortfolioCreate as PortfolioCreateSchema, PortfolioUpdate as PortfolioUpdateSchema
 
 from app.core.security import get_current_user
 from app.core.database_sync import get_db
@@ -23,7 +24,6 @@ class PortfolioCreate(BaseModel):
 class PortfolioUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    base_currency: Optional[str] = None
 
 
 class PortfolioResponse(BaseModel):
@@ -50,7 +50,7 @@ def get_portfolios(
 ):
     """Получение списка портфелей пользователя."""
     portfolio_repo = PortfolioRepository(db)
-    portfolios = portfolio_repo.get_user_portfolios(current_user.id)
+    portfolios = portfolio_repo.get_by_user_id(current_user.id)
     
     return [
         PortfolioResponse(
@@ -80,10 +80,8 @@ def create_portfolio(
     portfolio_repo = PortfolioRepository(db)
     
     portfolio = portfolio_repo.create(
-        owner_id=current_user.id,
-        name=portfolio_data.name,
-        description=portfolio_data.description,
-        base_currency=portfolio_data.base_currency
+        PortfolioCreateSchema(**portfolio_data.dict()),
+        user_id=current_user.id,
     )
     
     return PortfolioResponse(
@@ -162,8 +160,7 @@ def update_portfolio(
         )
     
     # Обновляем только заданные поля
-    update_data = portfolio_data.dict(exclude_unset=True)
-    portfolio = portfolio_repo.update(portfolio_id, **update_data)
+    portfolio = portfolio_repo.update(portfolio_id, PortfolioUpdateSchema(**portfolio_data.dict(exclude_unset=True)))
     
     return PortfolioResponse(
         id=portfolio.id,

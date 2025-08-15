@@ -1,0 +1,36 @@
+name: release-please
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      release_as:
+        description: 'Force version (e.g., 1.0.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Please
+        uses: google-github-actions/release-please-action@v4
+        with:
+          release-type: simple
+          bump-minor-pre-major: true
+          bump-patch-for-minor-pre-major: true
+          release-as: ${{ inputs.release_as }}
+          changelog-types: |
+            [{"type":"feat","section":"Features","hidden":false},
+             {"type":"fix","section":"Bug Fixes","hidden":false},
+             {"type":"docs","section":"Documentation","hidden":false},
+             {"type":"refactor","section":"Refactoring","hidden":false},
+             {"type":"perf","section":"Performance","hidden":false},
+             {"type":"ci","section":"CI","hidden":false},
+             {"type":"chore","section":"Chores","hidden":false}]
+

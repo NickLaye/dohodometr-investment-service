@@ -169,7 +169,7 @@ async def create_transaction(
     
     # Проверяем, что счет принадлежит пользователю
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(account.portfolio_id)
+    portfolio = portfolio_repo.get_by_id(account.portfolio_id)
     
     if not portfolio or portfolio.owner_id != current_user.id:
         raise HTTPException(
@@ -274,7 +274,7 @@ async def import_csv(
         )
     
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(account.portfolio_id)
+    portfolio = portfolio_repo.get_by_id(account.portfolio_id)
     
     if not portfolio or portfolio.owner_id != current_user.id:
         raise HTTPException(
@@ -369,7 +369,7 @@ async def get_transaction(
         )
     
     portfolio_repo = PortfolioRepository(db)
-    portfolio = await portfolio_repo.get_by_id(account.portfolio_id)
+    portfolio = portfolio_repo.get_by_id(account.portfolio_id)
     
     if not portfolio or portfolio.owner_id != current_user.id:
         raise HTTPException(

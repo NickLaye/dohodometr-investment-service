@@ -1,76 +1,43 @@
-# REPORT_A — Сбор симптомов и конфигураций
+# REPORT_A — Анализ состояния (Phase A)
 
-## 1) Входные артефакты (найдено в репозитории)
+## 1) Обнаруженные артефакты и конфигурация
 
-- **Workflows** (`.github/workflows`):
-  - `ci.yml` — CI: backend-tests, frontend-tests, security (Trivy + detect-secrets), docker-build, e2e-tests (PR), quality-gate.
-  - `security.yml` — ВНИМАНИЕ: файл содержит два независимых workflow в одном YAML (двойной верхнеуровневый `name:`) → потенциальная ошибка парсинга GitHub Actions.
-  - `security-hardened.yml` — Укреплённые security-пайплайны (Gitleaks, CodeQL, SBOM, dependency audit, Docker scan, Checkov, summary).
-  - `comprehensive-security.yml` — Расширенная security-конвейеризация (пре-проверки, backend/frontend security, контейнеры, SBOM, pen-test, summary).
-  - `cd-production.yml` и `cd-production-fixed.yml` — Два похожих CD на прод, есть риск двойного деплоя/дублирования статусов.
+- **CI/CD**: каталог `.github/workflows` в репозитории отсутствует → нет настроенных GitHub Actions. Это блокер для PR.
+- **Git политика**: есть `.editorconfig`, `.gitattributes`, `.gitignore`; есть `.pre-commit-config.yaml` (ruff/black/mypy/eslint/hadolint/yamllint/detect-secrets).
+- **Secret scan**: есть `.gitleaks.toml` с allowlist для dev-секретов (compose dev), игнор для build/caches.
+- **Языки и версии**:
+  - Python: `.python-version` → 3.12.3; `backend/pyproject.toml` → requires-python >=3.12; ruff/mypy/pytest/coverage конфиг присутствуют.
+  - Node: `.nvmrc` → 20; `frontend/package.json` engines node >=18 (совместимо, рекомендуем зафиксировать 20 в engines).
+- **Backend зависимости**: `backend/requirements.txt` (pinned), `backend/requirements-dev.txt` (pinned). Multi-stage Dockerfile, non-root, healthcheck ok.
+- **Frontend**: Next.js 14, TS strict, ESLint/Prettier. Multi-stage Dockerfile, non-root, healthcheck ok.
+- **Compose (dev)**: `docker-compose.dev.yml` содержит Postgres/Redis/MinIO/backend/celery/frontend; dev-секреты заданы в env (допустимо для dev, попадают в gitleaks allowlist).
+- **Makefile**: цели lint/test/security-scan/ci-test. Замечание: `ci-test` ссылается на `docker-compose.test.yml`, которого нет в репозитории → разрыв.
 
-- **CODEOWNERS**: `.github/CODEOWNERS` — назначены владельцы для секьюрити-критичных путей, CI/CD и документации (плейсхолдеры `@yourusername`, `@security-team`, и т.д.).
+## 2) Симптомы/риски для push/PR
 
-- **Документация/политики/лицензии**:
-  - `README.md` — подробный обзор, dev/prod запуск, мониторинг, тесты.
-  - `CONTRIBUTING.md` — гайд, Conventional Commits, тест/линт чек-листы перед PR.
-  - `SECURITY.md` — политика безопасной разработки, контакт `security@investment-service.ru`.
-  - `LICENSE` — MIT (2025, Investment Service).
+- Нет GitHub Actions → PR будут без required checks; при включённой защите ветки merge заблокирован.
+- `ci-test` ломается из-за отсутствия `docker-compose.test.yml`.
+- Dev-секреты в compose могут давать ложные срабатывания gitleaks вне allowlist контекста.
 
-- **Lock/менеджеры пакетов**:
-  - Frontend: `frontend/package-lock.json` (npm). Yarn/pnpm lock не обнаружены.
-  - Backend: `backend/requirements.txt`, `backend/requirements-dev.txt`. Poetry/Pipenv lock не обнаружены.
+## 3) Branch protection и required checks (фактическое/план)
 
-- **Docker/Compose/Infra**:
-  - Backend: `backend/Dockerfile` (multi-stage, non-root, healthcheck); dev-файл `backend/Dockerfile.dev` (есть в дереве, используется в compose; содержимое не просматривалось в этом отчёте).
-  - Frontend: `frontend/Dockerfile` (multi-stage, non-root, healthcheck); dev-файл `frontend/Dockerfile.dev`.
-  - Compose (dev): `docker-compose.dev.yml` — Postgres, Redis, MinIO, backend, celery, frontend; содержит dev-секреты в env (см. симптомы ниже).
-  - Compose (prod): `deployment/docker-compose.production.yml` — Traefik, backend, frontend, Postgres, Redis, Uptime Kuma, healthchecks и security headers.
-  - Мониторинг: `infra/prometheus/prometheus.yml`, `infra/prometheus/alerts.yml`; Traefik dynamic: `infra/traefik/dynamic.yml` (CSP, HSTS, CORS, rate-limit).
+- Фактическое: локально определить нельзя. Предлагаемый стандарт (синхрон с `.cursor/rules`):
+  - backend-tests, frontend-tests, security, docker-build, quality-gate (плюс CodeQL).
+- Имена job будут синхронизированы при добавлении workflows в Phase E.
 
-- **Конфиги качества/типов**:
-  - Backend: `backend/pyproject.toml` (ruff, mypy, pytest, coverage ≥80%).
-  - Frontend: `frontend/package.json` (скрипты lint/type-check/test/e2e), `tsconfig.json` (наличие подтверждено структурой, содержимое будет учтено в последующих фазах).
+## 4) Вывод
 
-## 2) Симптомы и риски (до запуска пайплайнов)
+- Основной блокер: отсутствие `.github/workflows/*` и `docker-compose.test.yml`.
+- Бэкенд/фронтенд Dockerfile соответствуют требованиям: multi-stage, non-root, healthcheck.
+- Контроль качества и типов присутствует (ruff/mypy/eslint/tsc), нужен CI wiring.
 
-- **[Блокер CI] Некорректный YAML в `.github/workflows/security.yml`**:
-  - Файл содержит два верхнеуровневых workflow в одном документе (двойной ключ `name:` и повтор `on/jobs`). GitHub Actions обрабатывает по одному workflow на файл → высокая вероятность ошибки парсинга/игнора части шагов.
+## 5) Рекомендации к исправлению (перейдут в Phase E/B)
 
-- **[Риск CD] Дубликаты прод-деплоя**:
-  - Имеются оба файла: `cd-production.yml` и `cd-production-fixed.yml` с одинаковым назначением. Риск: гонки, двойной запуск, путаница в required checks.
+- Добавить стандартизированные workflows: lint → typecheck → tests → security scan → docker build (и позже deploy). Pin actions по SHA и минимальные permissions.
+- Добавить `docker-compose.test.yml` под `make ci-test` или править цель на существующие конфиги.
+- Уточнить engines в `frontend/package.json` до Node 20.
+- Синхронизировать required checks в GitHub Branch protection с названиями job.
 
-- **Secret Scanning / Push Protection**:
-  - В `docker-compose.dev.yml` присутствуют явные dev-секреты и дефолтные пароли (`MINIO_ROOT_PASSWORD=password123`, `SECRET_KEY=dev-...`, `JWT_SECRET_KEY=dev-...`, `REDIS без пароля` и т.п.).
-  - В прод-композе секреты ожидаются из `secrets.*`/env (ок), но наличие dev-секретов в репозитории может триггерить Gitleaks/Secret Scanning на PR (ложноположительные или настоящие, в зависимости от правил). Требуется baseline/игнор для dev и строгие правила для prod.
-
-- **Pinning экшенов**:
-  - Часть экшенов закреплена по SHA (👍), часть — по `v*` или `master` (например, Trivy `@master` в ряде файлов) → риск supply-chain. Требуется унификация pin по SHA.
-
-- **Branch Protection / Required checks (предположение)**:
-  - Вероятные обязательные статусы: `CI Pipeline / backend-tests`, `CI Pipeline / frontend-tests`, `CI Pipeline / security`, `CI Pipeline / docker-build`, возможно `quality-gate`; а также CodeQL из security workflows.
-  - Из-за некорректного `security.yml` и дубликатов CD — возможны «Required check missing» или «Expected — Waiting»/падения.
-
-- **Крупные файлы/LFS**:
-  - На данном этапе не выявлялись, требуется прогон истории (см. Фаза B — gitleaks/LFS сканы).
-
-- **CRLF/пермишены/симлинки**:
-  - `.editorconfig` и `.gitattributes` в корне не обнаружены → риск дрейфа EOL/пермишенов между ОС.
-
-## 3) Вывод по Фазе A
-
-- Репозиторий хорошо подготовлен к CI/CD и секьюрити (CodeQL, SBOM, Trivy, Checkov), но есть критичные блокеры формата/workflow-дубликатов.
-- Высокий риск ложных алармов по secret scanning из-за dev-значений в compose. Нужна нормализация (baseline/исключения) и строгая политика для prod.
-- Нет явных следов Terraform/K8s в дереве (используется Traefik + docker-compose).
-
-## 4) Следующие шаги (под Фазу B/C/D намечено)
-
-- Разнести `security.yml` на отдельные валидные workflow-файлы или оставить один, убрав дубликат разделов.
-- Выбрать и оставить один CD (`cd-production.yml`), второй удалить/объединить, согласовать названия job’ов с Branch Protection.
-- Добавить `.editorconfig`, `.gitattributes` и `.gitignore` актуальные для проекта.
-- Включить/настроить `gitleaks` и прогнать по всей истории, подготовить baseline и ротацию при необходимости.
-- Проверить LFS/крупные файлы в истории, при необходимости подготовить план переписывания.
-
-— Конкретные исправления и PR будут отражены в REPORT_B/… (следующие фазы).
+— Дальнейшие изменения будут оформлены отдельным PR (Phase B/C/E) с соответствующими отчётами.
 
 

@@ -115,6 +115,11 @@ class Portfolio(Base):
     
     def __repr__(self) -> str:
         return f"<Portfolio(id={self.id}, name='{self.name}', owner_id={self.owner_id})>"
+
+    # Алиас для совместимости со старыми вызовами (user_id == owner_id)
+    @property
+    def user_id(self) -> int:
+        return self.owner_id
     
     @property
     def pnl_percent(self) -> Optional[Decimal]:

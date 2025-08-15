@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security scanning (Bandit, Trivy, CodeQL)
 - Issue and PR templates
 - Contributing guidelines and code of conduct
-- Automated dependency updates with Dependabot
+- Automated dependency updates with Renovate (weekly)
 
 ### 🔧 Changed
 - Migrated from async database calls to synchronous for stability
@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented comprehensive security scanning pipeline
 - Enhanced container security with non-root users
 - Added security headers and HTTPS enforcement
+- Updated security dependencies and CI scanning jobs as part of repo hardening
 
 ## [1.0.0] - 2025-01-08
 

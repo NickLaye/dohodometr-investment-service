@@ -14,6 +14,9 @@ on:
         options:
           - production
           - staging
+      dummy:
+        description: 'Manual trigger placeholder'
+        required: false
 
 env:
   REGISTRY: ghcr.io
@@ -106,22 +109,39 @@ jobs:
     needs: build-and-push
     
     steps:
+      - name: Normalize backend image ref (first tag or digest)
+        id: beimg
+        run: |
+          # Use first tag from metadata outputs (newline/comma separated) or fallback to backend digest
+          TAGS="${{ needs.build-and-push.outputs.backend-image }}"
+          FIRST=$(echo "$TAGS" | tr ', ' '\n' | head -n 1)
+          if [ -z "$FIRST" ]; then FIRST=${{ needs.build-and-push.outputs.image-digest }}; fi
+          echo "ref=$FIRST" >> "$GITHUB_OUTPUT"
+
       - name: Run Trivy vulnerability scanner on backend
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-and-push.outputs.backend-image }}
+          image-ref: ${{ steps.beimg.outputs.ref }}
           format: 'sarif'
           output: 'backend-trivy-results.sarif'
+
+      - name: Normalize frontend image ref (first tag or digest)
+        id: feimg
+        run: |
+          TAGS="${{ needs.build-and-push.outputs.frontend-image }}"
+          FIRST=$(echo "$TAGS" | tr ', ' '\n' | head -n 1)
+          if [ -z "$FIRST" ]; then FIRST=${{ needs.build-and-push.outputs.image-digest }}; fi
+          echo "ref=$FIRST" >> "$GITHUB_OUTPUT"
 
       - name: Run Trivy vulnerability scanner on frontend
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-and-push.outputs.frontend-image }}
+          image-ref: ${{ steps.feimg.outputs.ref }}
           format: 'sarif'
           output: 'frontend-trivy-results.sarif'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'backend-trivy-results.sarif'
@@ -188,6 +208,43 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   create-release:
+  docker-build:
+    name: Docker Build (alias)
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: always()
+    steps:
+      - name: Mirror upstream docker build status
+        run: |
+          echo "Upstream: ${{ needs.build-and-push.result }}"
+          test "${{ needs.build-and-push.result }}" = "success"
+
+  security:
+    name: Security (alias)
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    if: always()
+    steps:
+      - name: Mirror upstream security scan status
+        run: |
+          echo "Upstream: ${{ needs.security-scan.result }}"
+          test "${{ needs.security-scan.result }}" = "success"
+
+  quality-gate:
+    name: Quality Gate (alias)
+    runs-on: ubuntu-latest
+    needs: [docker-build, security]
+    if: always()
+    steps:
+      - name: Check required job results
+        run: |
+          echo "Docker Build: ${{ needs.docker-build.result }}"
+          echo "Security: ${{ needs.security.result }}"
+          if [[ "${{ needs.docker-build.result }}" != "success" || "${{ needs.security.result }}" != "success" ]]; then
+            echo "❌ Quality gate failed"
+            exit 1
+          fi
+          echo "✅ Quality gate passed"
     name: Create Release
     runs-on: ubuntu-latest
     needs: [deploy-production]

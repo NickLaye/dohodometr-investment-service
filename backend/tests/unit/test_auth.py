@@ -21,7 +21,7 @@ from app.core.security import (
     verify_totp_token,
 )
 from app.repositories.user import UserRepository
-from app.schemas.auth import UserCreate, UserLogin
+from app.schemas.auth import UserRegister, UserLogin
 
 
 class TestPasswordSecurity:
@@ -170,7 +170,7 @@ class TestUserRepository:
     def test_create_user(self, db_session):
         """Test user creation."""
         user_repo = UserRepository(db_session)
-        user_data = UserCreate(
+        user_data = UserRegister(
             email="test@example.com",
             username="testuser",
             password="password123",
@@ -191,7 +191,7 @@ class TestUserRepository:
         user_repo = UserRepository(db_session)
         
         # First create a user
-        user_data = UserCreate(
+        user_data = UserRegister(
             email=mock_user["email"],
             username=mock_user["username"],
             password="password123",
@@ -211,7 +211,7 @@ class TestUserRepository:
         user_repo = UserRepository(db_session)
         
         # First create a user
-        user_data = UserCreate(
+        user_data = UserRegister(
             email=mock_user["email"],
             username=mock_user["username"],
             password="password123",

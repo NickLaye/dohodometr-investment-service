@@ -246,7 +246,11 @@ reset-env: ## Reset development environment (DANGEROUS!)
 
 ci-test: ## Run tests in CI environment
 	@echo "$(BLUE)Running CI tests...$(NC)"
-	@docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+	@docker-compose -f docker-compose.test.yml up -d postgres redis
+	@docker-compose -f docker-compose.test.yml build backend
+	@docker-compose -f docker-compose.test.yml run --rm backend || (docker-compose -f docker-compose.test.yml down; exit 1)
+	@docker-compose -f docker-compose.test.yml build frontend
+	@docker-compose -f docker-compose.test.yml run --rm frontend || (docker-compose -f docker-compose.test.yml down; exit 1)
 	@docker-compose -f docker-compose.test.yml down
 
 sbom: ## Generate Software Bill of Materials
