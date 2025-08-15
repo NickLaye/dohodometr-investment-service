@@ -196,11 +196,12 @@ class TaxCalculatorRF:
     def _get_security_type(self, symbol: str) -> SecurityType:
         """Определить тип ценной бумаги по символу."""
         # Упрощенная логика - в реальности нужна база данных инструментов
-        if any(x in symbol.upper() for x in ["BOND", "ОФЗ", "КОРП"]):
+        sym = symbol.upper()
+        if any(x in sym for x in ["BOND", "ОФЗ", "КОРП"]) or sym.startswith("SU"):
             return SecurityType.BOND
-        elif "ETF" in symbol.upper():
+        elif "ETF" in sym:
             return SecurityType.ETF
-        elif "REIT" in symbol.upper():
+        elif "REIT" in sym:
             return SecurityType.REIT
         else:
             return SecurityType.STOCK
@@ -593,11 +594,11 @@ def generate_tax_optimization_recommendations(
     
     for position in current_positions:
         holding_period = (current_date - position.purchase_date).days / 365.25
-        if 2.5 <= holding_period < 3:  # Близко к 3 годам
+        if holding_period >= 2.5:  # Близко к 3 годам (или уже получена)
             near_ldv_positions.append({
                 "symbol": position.symbol,
-                "days_until_ldv": int((3 * 365.25) - (current_date - position.purchase_date).days),
-                "potential_exemption": position.unrealized_pnl if position.unrealized_pnl and position.unrealized_pnl > 0 else 0
+                "days_until_ldv": max(0, int((3 * 365.25) - (current_date - position.purchase_date).days)),
+                "potential_exemption": str(position.unrealized_pnl) if position.unrealized_pnl and position.unrealized_pnl > 0 else "0"
             })
     
     if near_ldv_positions:

@@ -73,6 +73,14 @@ async def lifespan(app: FastAPI):
         with engine.begin() as conn:
             conn.execute(text("SELECT 1"))
         logger.info("Подключение к базе данных установлено")
+        # В тестовой среде и SQLite гарантируем наличие схемы
+        try:
+            if settings.ENVIRONMENT.lower() in {"testing", "development"} and str(engine.url).startswith("sqlite"):
+                from app.core.database_sync import Base as SyncBase
+                import app.models as _  # ensure models imported
+                SyncBase.metadata.create_all(bind=engine)
+        except Exception as schema_err:
+            logger.warning(f"Не удалось автоинициализировать схему БД: {schema_err}")
     except Exception as e:
         logger.error(f"Ошибка подключения к базе данных: {e}")
         raise
@@ -139,10 +147,20 @@ def create_application() -> FastAPI:
         )
     
     # Middleware для доверенных хостов
-    if settings.TRUSTED_HOSTS:
+    if settings.TRUSTED_HOSTS and settings.ENVIRONMENT.lower() != "testing":
+        # Добавляем 'testserver' для совместимости с TestClient
+        allowed = [str(host) for host in settings.TRUSTED_HOSTS]
+        if "testserver" not in allowed:
+            allowed.append("testserver")
         app.add_middleware(
             TrustedHostMiddleware,
-            allowed_hosts=[str(host) for host in settings.TRUSTED_HOSTS],
+            allowed_hosts=allowed,
+        )
+    else:
+        # В тестовой среде принимаем любые хосты, чтобы избежать Invalid host header
+        app.add_middleware(
+            TrustedHostMiddleware,
+            allowed_hosts=["*"]
         )
 
     # Принудительный HTTPS в prod

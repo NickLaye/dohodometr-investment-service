@@ -202,7 +202,7 @@ class TinkoffImportAdapter(BrokerImportAdapter):
         key_fields = ['date', 'time', 'operation_type', 'instrument', 'amount']
         hash_string = '|'.join(str(row_data.get(field, '')) for field in key_fields)
         
-        return hashlib.md5(hash_string.encode()).hexdigest()
+        return hashlib.new('md5', hash_string.encode(), usedforsecurity=False).hexdigest()
 
 
 class SberbankImportAdapter(BrokerImportAdapter):

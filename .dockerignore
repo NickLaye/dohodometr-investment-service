@@ -1,0 +1,26 @@
+# Global ignores
+.git
+.gitignore
+.DS_Store
+node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+coverage
+frontend/.next
+frontend/coverage
+frontend/.turbo
+frontend/node_modules
+backend/.venv
+backend/.coverage
+backend/.hypothesis
+backend/coverage
+reports
+*.log
+Dockerfile.dev
+frontend/Dockerfile.dev
+backend/Dockerfile.dev
+

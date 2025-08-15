@@ -1,7 +1,7 @@
 """Эндпоинты для работы с портфелями."""
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.schemas.portfolio import PortfolioCreate as PortfolioCreateSchema, PortfolioUpdate as PortfolioUpdateSchema
@@ -18,7 +18,9 @@ router = APIRouter()
 class PortfolioCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    base_currency: str = "RUB"
+    # Совместимость с тестами: принимаем и base_currency, и currency
+    base_currency: Optional[str] = None
+    currency: Optional[str] = None
 
 
 class PortfolioUpdate(BaseModel):
@@ -31,6 +33,7 @@ class PortfolioResponse(BaseModel):
     name: str
     description: Optional[str]
     base_currency: str
+    currency: str
     is_active: bool
     total_value: Optional[float]
     total_cost: Optional[float]
@@ -46,11 +49,14 @@ class PortfolioResponse(BaseModel):
 @router.get("/", response_model=List[PortfolioResponse])
 def get_portfolios(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 50,
 ):
     """Получение списка портфелей пользователя."""
     portfolio_repo = PortfolioRepository(db)
-    portfolios = portfolio_repo.get_by_user_id(current_user.id)
+    # Пагинация: skip -> offset, limit -> limit
+    portfolios = portfolio_repo.get_by_user_id(current_user.id, limit=limit, offset=skip)
     
     return [
         PortfolioResponse(
@@ -58,6 +64,7 @@ def get_portfolios(
             name=p.name,
             description=p.description,
             base_currency=p.base_currency,
+            currency=p.base_currency,
             is_active=p.is_active,
             total_value=float(p.total_value) if p.total_value else None,
             total_cost=float(p.total_cost) if p.total_cost else None,
@@ -79,8 +86,12 @@ def create_portfolio(
     """Создание нового портфеля."""
     portfolio_repo = PortfolioRepository(db)
     
+    # Нормализуем валюту
+    payload = portfolio_data.dict()
+    if not payload.get("base_currency") and payload.get("currency"):
+        payload["base_currency"] = payload["currency"]
     portfolio = portfolio_repo.create(
-        PortfolioCreateSchema(**portfolio_data.dict()),
+        PortfolioCreateSchema(**payload),
         user_id=current_user.id,
     )
     
@@ -89,6 +100,7 @@ def create_portfolio(
         name=portfolio.name,
         description=portfolio.description,
         base_currency=portfolio.base_currency,
+        currency=portfolio.base_currency,
         is_active=portfolio.is_active,
         total_value=float(portfolio.total_value) if portfolio.total_value else None,
         total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
@@ -109,7 +121,7 @@ def get_portfolio(
     portfolio_repo = PortfolioRepository(db)
     portfolio = portfolio_repo.get_by_id(portfolio_id)
     
-    if not portfolio:
+    if not portfolio or not portfolio.is_active:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Портфель не найден"
@@ -126,6 +138,7 @@ def get_portfolio(
         name=portfolio.name,
         description=portfolio.description,
         base_currency=portfolio.base_currency,
+        currency=portfolio.base_currency,
         is_active=portfolio.is_active,
         total_value=float(portfolio.total_value) if portfolio.total_value else None,
         total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
@@ -167,6 +180,7 @@ def update_portfolio(
         name=portfolio.name,
         description=portfolio.description,
         base_currency=portfolio.base_currency,
+        currency=portfolio.base_currency,
         is_active=portfolio.is_active,
         total_value=float(portfolio.total_value) if portfolio.total_value else None,
         total_cost=float(portfolio.total_cost) if portfolio.total_cost else None,
@@ -177,7 +191,7 @@ def update_portfolio(
     )
 
 
-@router.delete("/{portfolio_id}")
+@router.delete("/{portfolio_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_portfolio(
     portfolio_id: int,
     current_user: User = Depends(get_current_user),
@@ -207,7 +221,7 @@ def delete_portfolio(
             detail="Ошибка удаления портфеля"
         )
     
-    return {"message": "Портфель успешно удален"}
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{portfolio_id}/summary")

@@ -1,0 +1,49 @@
+Project inventory report
+Generated: 2025-08-15T08:14:01Z
+Repository root: /Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций
+
+==== System Versions ====
+python: not installed
+python3: Python 3.9.6
+node: v24.5.0
+npm: 11.5.1
+pnpm: not installed
+docker: Docker version 28.3.2, build 578ccf6
+docker compose: Docker Compose version v2.38.2-desktop.1
+docker-compose: Docker Compose version v2.38.2-desktop.1
+java: The operation couldn’t be completed. Unable to locate a Java Runtime.
+
+==== Dependency Managers and Lock Files ====
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/frontend/package.json
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/package.json
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/frontend/package-lock.json
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/requirements.txt
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/requirements-dev.txt
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/pyproject.toml
+
+==== Test Directories ====
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/frontend/tests
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/tests
+
+==== Config Files ====
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/pytest.ini
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/pyproject.toml
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/frontend/vitest.config.ts
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/mypy.ini
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/frontend/tsconfig.json
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/frontend/Dockerfile
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/frontend/Dockerfile.dev
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/Dockerfile
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/backend/Dockerfile.dev
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/docker-compose.dohodometr.yml
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/docker-compose.dev.yml
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/deployment/docker-compose.production.yml
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/docker-compose.test.yml
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/Makefile
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/.pre-commit-config.yaml
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/.editorconfig
+/Users/nicklaye/Desktop/Cursor Projects/Сервис учета инвестиций/.nvmrc
+
+==== pre-commit ====
+pre-commit: not installed
+

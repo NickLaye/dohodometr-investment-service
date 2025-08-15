@@ -5,16 +5,31 @@
 from typing import Generator
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, declared_attr
+from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
 
 # Создание синхронного движка (для быстрого запуска)
-engine = create_engine(
-    settings.database_url_sync,  # Используем синхронный URL
-    echo=settings.DATABASE_ECHO,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-)
+_db_url = settings.database_url_sync
+_common_kwargs = dict(echo=settings.DATABASE_ECHO, pool_pre_ping=True, pool_recycle=3600)
+
+if _db_url.startswith("sqlite"):
+    # Для тестов используем in-memory с StaticPool, чтобы делиться одним соединением
+    if settings.ENVIRONMENT == "testing":
+        engine = create_engine(
+            "sqlite+pysqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+            **_common_kwargs,
+        )
+    else:
+        engine = create_engine(
+            _db_url,
+            connect_args={"check_same_thread": False},
+            **_common_kwargs,
+        )
+else:
+    engine = create_engine(_db_url, **_common_kwargs)
 
 # Создание фабрики сессий
 SessionLocal = sessionmaker(
