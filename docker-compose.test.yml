@@ -56,5 +56,3 @@ services:
       - ./frontend:/app
     command: >-
       sh -lc "npm ci --no-audit --no-fund && npm run test:ci"
-
-

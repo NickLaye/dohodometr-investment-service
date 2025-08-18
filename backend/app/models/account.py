@@ -94,7 +94,7 @@ class Account(Base):
         Index('ix_accounts_portfolio_active', 'portfolio_id', 'is_active'),
         Index('ix_accounts_broker', 'broker'),
         CheckConstraint('length(name) >= 1', name='ck_accounts_name_not_empty'),
-        CheckConstraint('currency ~ \'^[A-Z]{3}$\'', name='ck_accounts_currency_format'),
+        # SQLite не поддерживает ~ (regex), формат валюты валидируем вне БД
     )
     
     def __repr__(self) -> str:

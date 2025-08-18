@@ -1,7 +1,12 @@
-name: CodeQL (manual)
+name: CodeQL
 
 on:
-  # Run only when manually dispatched to avoid conflicts with GitHub's Default Code Scanning setup
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '28 3 * * 6'
   workflow_dispatch:
 
 permissions:
@@ -12,7 +17,6 @@ jobs:
   analyze:
     name: analyze
     runs-on: ubuntu-latest
-    if: ${{ false }} # disabled by default; keep file for manual/debug runs only
     permissions:
       actions: read
       contents: read

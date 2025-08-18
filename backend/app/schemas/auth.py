@@ -43,6 +43,7 @@ class User(BaseModel):
     id: int
     email: EmailStr
     username: Optional[str] = None
+    full_name: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_active: bool

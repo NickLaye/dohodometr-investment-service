@@ -45,7 +45,7 @@ class PortfolioRepository:
             
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Ошибка создания портфеля {name}: {e}")
+            logger.error(f"Ошибка создания портфеля {data.name}: {e}")
             raise
     
     def get_by_id(self, portfolio_id: int) -> Optional[Portfolio]:

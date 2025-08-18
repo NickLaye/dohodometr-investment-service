@@ -1,58 +1,33 @@
 """
-Настройка подключения к базе данных PostgreSQL.
+Настройка подключения к базе данных (sync). Делим один и тот же Base с database_sync,
+чтобы тестовая и основная метадата были едины.
 """
 
 from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.orm import DeclarativeBase, declared_attr
-from sqlalchemy.pool import NullPool
-from sqlalchemy import MetaData
+from sqlalchemy.pool import NullPool, StaticPool
 
 from app.core.config import settings
 from app.core.logging import logger
+from app.core.database_sync import Base  # Используем общий Base
 
 
-# Создание асинхронного движка
-engine = create_engine(
-    str(settings.DATABASE_URL),
-    echo=settings.DATABASE_ECHO,
-    poolclass=NullPool if settings.ENVIRONMENT == "testing" else None,
-    pool_pre_ping=True,
-    pool_recycle=3600,  # Переподключение каждый час
-    connect_args={
-        "server_settings": {
-            "application_name": f"{settings.APP_NAME}-{settings.ENVIRONMENT}",
-            "timezone": settings.DEFAULT_TIMEZONE,
-        }
-    }
-)
+# Создание синхронного движка
+_db_url = settings.database_url_sync
+_common_kwargs = dict(echo=settings.DATABASE_ECHO, pool_pre_ping=True, pool_recycle=3600)
+if _db_url.startswith("sqlite") and settings.ENVIRONMENT == "testing":
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        **_common_kwargs,
+    )
+else:
+    engine = create_engine(_db_url, **_common_kwargs)
 
 # Создание фабрики сессий
-session_maker = sessionmaker(
-    engine,
-    class_=Session,
-    expire_on_commit=False
-)
-
-
-class Base(DeclarativeBase):
-    """Базовый класс для всех моделей."""
-    
-    metadata = MetaData(
-        naming_convention={
-            "ix": "ix_%(column_0_label)s",
-            "uq": "uq_%(table_name)s_%(column_0_name)s",
-            "ck": "ck_%(table_name)s_%(constraint_name)s",
-            "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-            "pk": "pk_%(table_name)s"
-        }
-    )
-    
-    @declared_attr
-    def __tablename__(cls) -> str:
-        """Автоматическое именование таблиц."""
-        return cls.__name__.lower()
+session_maker = sessionmaker(bind=engine, expire_on_commit=False)
 
 
 def get_db() -> Generator[Session, None, None]:

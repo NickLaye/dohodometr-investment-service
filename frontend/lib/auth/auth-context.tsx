@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { api } from '@/lib/api-client'
 
 interface User {
   id: string
@@ -10,9 +11,9 @@ interface User {
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string, totpCode?: string) => Promise<void>
   register: (email: string, password: string, name: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   isLoading: boolean
   isAuthenticated: boolean
 }
@@ -30,7 +31,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      // Здесь будет логика проверки токена
+      if (typeof window === 'undefined') {
+        setIsLoading(false)
+        return
+      }
+      const access = window.localStorage.getItem('access_token')
+      if (!access) {
+        setUser(null)
+        setIsLoading(false)
+        return
+      }
+      const me = await api.auth.me()
+      const data = me.data as any
+      setUser({ id: String(data.id), email: data.email, name: data.first_name || data.email })
       setIsLoading(false)
     } catch (error) {
       setUser(null)
@@ -38,12 +51,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const login = async (email: string, _password: string) => {
+  const login = async (email: string, password: string, totpCode?: string) => {
     setIsLoading(true)
     try {
-      // Здесь будет логика авторизации
-      const userData = { id: '1', email, name: 'User' }
-      setUser(userData)
+      const resp = await api.auth.login(email, password, totpCode)
+      const access = (resp.data as any)?.access_token as string
+      const refresh = (resp.data as any)?.refresh_token as string
+      if (typeof window !== 'undefined') {
+        if (access) window.localStorage.setItem('access_token', access)
+        if (refresh) window.localStorage.setItem('refresh_token', refresh)
+      }
+      // Получаем профиль
+      const me = await api.auth.me()
+      const data = me.data as any
+      setUser({ id: String(data.id), email: data.email, name: data.first_name || data.email })
     } catch (error) {
       throw error
     } finally {
@@ -51,12 +72,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const register = async (email: string, _password: string, name: string) => {
+  const register = async (email: string, password: string, name: string) => {
     setIsLoading(true)
     try {
-      // Здесь будет логика регистрации
-      const userData = { id: '1', email, name }
-      setUser(userData)
+      await api.auth.register(email, password, name, '')
+      // После регистрации сразу логиним
+      await login(email, password)
     } catch (error) {
       throw error
     } finally {
@@ -64,9 +85,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.auth.logout()
+    } catch {}
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('access_token')
+      window.localStorage.removeItem('refresh_token')
+    }
     setUser(null)
-    // Очистка токенов
   }
 
   return (

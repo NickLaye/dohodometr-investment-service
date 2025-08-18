@@ -16,40 +16,91 @@ const apiClient = axios.create({
   },
 })
 
-// Интерцептор для добавления токена авторизации
+// Интерцептор для добавления токена авторизации (только в браузере)
 apiClient.interceptors.request.use(
   (config) => {
-    // Получаем токен из localStorage или cookies
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    if (typeof window !== 'undefined') {
+      const token = window.localStorage.getItem('access_token')
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
     }
     return config
   },
-  (error) => {
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
 // Интерцептор для обработки ответов
+// Интерцептор для обработки ответов с авто-refresh
+let isRefreshing = false
+let pendingRequests: Array<(token: string | null) => void> = []
+
+function onTokenRefreshed(newToken: string | null) {
+  pendingRequests.forEach((cb) => cb(newToken))
+  pendingRequests = []
+}
+
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response
-  },
-  (error: AxiosError) => {
-    // Обработка ошибки авторизации
-    if (error.response?.status === 401) {
-      // Очищаем токен и перенаправляем на логин
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      
-      // Перенаправление на логин (только в браузере)
-      if (typeof window !== 'undefined') {
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config
+
+    // Если 401 — пробуем один раз обновить токен
+    if (
+      error.response?.status === 401 &&
+      typeof window !== 'undefined' &&
+      originalRequest &&
+      !((originalRequest as any)._retry as boolean)
+    ) {
+      ;(originalRequest as any)._retry = true
+
+      const refreshToken = window.localStorage.getItem('refresh_token')
+      if (!refreshToken) {
+        // Нет refresh — чистим и уходим на логин
+        window.localStorage.removeItem('access_token')
+        window.localStorage.removeItem('refresh_token')
         window.location.href = '/auth/login'
+        return Promise.reject(error)
+      }
+
+      if (isRefreshing) {
+        // Ждём, пока текущий refresh завершится
+        return new Promise((resolve) => {
+          pendingRequests.push((newToken) => {
+            if (newToken && originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${newToken}`
+            }
+            resolve(apiClient(originalRequest))
+          })
+        })
+      }
+
+      try {
+        isRefreshing = true
+        const resp = await apiClient.post('/api/v1/auth/refresh', { refresh_token: refreshToken })
+        const newAccess = (resp.data as any)?.access_token as string
+        const newRefresh = (resp.data as any)?.refresh_token as string
+        if (newAccess) {
+          window.localStorage.setItem('access_token', newAccess)
+        }
+        if (newRefresh) {
+          window.localStorage.setItem('refresh_token', newRefresh)
+        }
+        onTokenRefreshed(newAccess || null)
+        if (originalRequest.headers && newAccess) {
+          originalRequest.headers.Authorization = `Bearer ${newAccess}`
+        }
+        return apiClient(originalRequest)
+      } catch (refreshErr) {
+        window.localStorage.removeItem('access_token')
+        window.localStorage.removeItem('refresh_token')
+        window.location.href = '/auth/login'
+        return Promise.reject(refreshErr)
+      } finally {
+        isRefreshing = false
       }
     }
-    
-    // Логируем ошибки в консоль для разработки
+
     if (process.env.NODE_ENV === 'development') {
       console.error('API Error:', {
         url: error.config?.url,
@@ -58,7 +109,6 @@ apiClient.interceptors.response.use(
         data: error.response?.data,
       })
     }
-    
     return Promise.reject(error)
   }
 )

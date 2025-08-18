@@ -72,17 +72,28 @@ export default function LoginPage() {
     setErrors({})
 
     try {
-      await login(email, password)
+      try {
+        await login(email, password, requires2FA ? totpCode : undefined)
+      } catch (err: any) {
+        // если backend сообщает о необходимости 2FA
+        const detail = (err?.response?.data?.detail as string | undefined)?.toLowerCase()
+        if (
+          err?.response?.status === 400 &&
+          detail &&
+          (detail.includes('2fa') || detail.includes('двухфактор'))
+        ) {
+          setRequires2FA(true)
+          toast({
+            title: 'Требуется двухфакторная аутентификация',
+            description: 'Введите код из приложения аутентификатора',
+          })
+          return
+        }
+        throw err
+      }
       // Успешный вход - перенаправление произойдет автоматически
     } catch (error: any) {
-      // Проверяем, требуется ли 2FA
-      if (error.response?.status === 422 && error.response?.data?.detail?.includes('2FA')) {
-        setRequires2FA(true)
-        toast({
-          title: 'Требуется двухфакторная аутентификация',
-          description: 'Введите код из приложения аутентификатора',
-        })
-      } else {
+      {
         const errorMessage = error.response?.data?.detail || 'Ошибка входа'
         toast({
           title: 'Ошибка входа',

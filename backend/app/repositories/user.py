@@ -16,6 +16,7 @@ from app.core.security import (
     decrypt_sensitive_data,
     generate_numeric_code,
 )
+from app.schemas.auth import UserRegister
 from app.core.config import settings
 from app.core.logging import logger
 from app.core.redis_client import get_redis_client
@@ -38,43 +39,48 @@ class UserRepository:
         stmt = select(User).where(User.email == email.lower())
         result = self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    def get_by_username(self, username: str) -> Optional[User]:
+        """Получение пользователя по username."""
+        stmt = select(User).where(User.username == username)
+        result = self.db.execute(stmt)
+        return result.scalar_one_or_none()
     
-    def create(
-        self,
-        email: str,
-        password: str,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        **kwargs
-    ) -> User:
-        """Создание нового пользователя."""
+    def create(self, data: UserRegister) -> User:
+        """Создание нового пользователя из схемы регистрации."""
         try:
-            password_hash = get_password_hash(password)
-            
+            password_hash = get_password_hash(data.password)
             user = User(
-                email=email.lower().strip(),
+                email=data.email.lower().strip(),
+                username=(data.username or data.email.split('@')[0]).strip(),
                 password_hash=password_hash,
-                first_name=first_name.strip() if first_name else None,
-                last_name=last_name.strip() if last_name else None,
+                first_name=(data.first_name or (data.full_name.split(' ')[0] if data.full_name else None)),
+                last_name=(data.last_name or (data.full_name.split(' ')[-1] if data.full_name else None)),
                 is_verified=True,
-                **kwargs,
             )
-            
             self.db.add(user)
             self.db.commit()
             self.db.refresh(user)
-            
             logger.info(f"Создан новый пользователь: {user.email}")
             return user
-            
-        except IntegrityError as e:
+        except IntegrityError:
             self.db.rollback()
-            logger.error(f"Ошибка создания пользователя (уже существует): {email}")
+            logger.error(f"Ошибка создания пользователя (уже существует): {data.email}")
             raise ValueError("Пользователь с таким email уже существует")
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Ошибка создания пользователя {email}: {e}")
+            logger.error(f"Ошибка создания пользователя {data.email}: {e}")
             raise
+
+    def authenticate(self, email: str, password: str) -> Optional[User]:
+        """Аутентификация пользователя по email и паролю."""
+        user = self.get_by_email(email)
+        if not user:
+            return None
+        from app.core.security import verify_password
+        if not verify_password(password, user.password_hash):
+            return None
+        return user
     
     def update_login_info(self, user_id: int, ip_address: str = None):
         """Обновление информации о входе."""

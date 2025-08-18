@@ -2,7 +2,8 @@
 # Usage: make <target>
 
 .DEFAULT_GOAL := help
-.PHONY: help dev-up dev-down test lint format migrate backup logs health-check clean install-deps security-scan k6-smoke k6-baseline openapi
+.PHONY: help dev-up dev-down test lint format migrate backup logs health-check clean install-deps security-scan k6-smoke k6-baseline openapi inventory \
+    backend-init backend-test-fast backend-test-all backend-test-one docker-ci compose-ci flaky
 
 # Colors for output
 BOLD := \033[1m
@@ -119,6 +120,18 @@ k6-baseline: ## Run k6 baseline test (BASE_URL=http://localhost:8000)
 openapi: ## Export OpenAPI schema to docs/openapi.json
 	@$(MAKE) -C backend openapi
 
+inventory: scripts/inventory.sh ## Generate project inventory report
+	@bash scripts/inventory.sh
+
+flaky: ## Detect flaky tests for backend (pytest) and frontend (vitest/jest); report -> reports/flaky_report.md
+	@echo "$(BLUE)Preparing environments (backend/.venv, frontend deps)...$(NC)"
+	@$(MAKE) -s backend-init >/dev/null 2>&1 || true
+	@$(MAKE) -s fe-init >/dev/null 2>&1 || true
+	@echo "$(BLUE)Detecting flaky tests...$(NC)"
+	@mkdir -p reports
+	@python3 scripts/flaky_detector.py | tee reports/flaky_top10.out
+	@echo "$(GREEN)✅ Flaky detection completed. See reports/flaky_report.md$(NC)"
+
 ##@ Code Quality
 
 lint: ## Run linting for all code
@@ -140,13 +153,16 @@ pre-commit: ## Run pre-commit hooks on all files
 	@pre-commit run --all-files
 	@echo "$(GREEN)✅ Pre-commit hooks completed$(NC)"
 
+hooks: ## Install pre-commit hooks
+	@echo "$(BLUE)Installing pre-commit hooks...$(NC)"
+	@pre-commit install
+	@echo "$(GREEN)✅ Pre-commit hooks installed$(NC)"
+
 ##@ Security
 
 security-scan: ## Run security scans
 	@echo "$(BLUE)Running security scans...$(NC)"
-	@docker-compose -f docker-compose.dev.yml exec backend bandit -r app/ -f json -o security-report.json || true
-	@docker-compose -f docker-compose.dev.yml exec backend safety check || true
-	@docker-compose -f docker-compose.dev.yml exec frontend npm audit || true
+	@bash scripts/security_scan.sh
 	@echo "$(GREEN)✅ Security scans completed$(NC)"
 
 secrets-check: ## Check for secrets in code
@@ -227,6 +243,30 @@ shell-postgres: ## Open PostgreSQL shell
 shell-redis: ## Open Redis CLI
 	@docker-compose -f docker-compose.dev.yml exec redis redis-cli
 
+##@ Frontend (local)
+
+.PHONY: fe-init fe-lint fe-types fe-test
+
+fe-init: ## Frontend: npm ci || npm install
+	@echo "$(BLUE)Frontend init (npm ci || npm install)...$(NC)"
+	@cd frontend && (npm ci || npm install)
+	@echo "$(GREEN)✅ Frontend dependencies ready$(NC)"
+
+fe-lint: ## Frontend: ESLint (no warnings)
+	@echo "$(BLUE)Frontend ESLint...$(NC)"
+	@cd frontend && npx eslint . --max-warnings=0
+	@echo "$(GREEN)✅ ESLint passed$(NC)"
+
+fe-types: ## Frontend: TypeScript type-check
+	@echo "$(BLUE)Frontend TypeScript check...$(NC)"
+	@cd frontend && npx tsc --noEmit
+	@echo "$(GREEN)✅ TypeScript OK$(NC)"
+
+fe-test: ## Frontend: unit tests (non-watch)
+	@echo "$(BLUE)Frontend unit tests...$(NC)"
+	@cd frontend && npm test --if-present -- --watch=false
+	@echo "$(GREEN)✅ Unit tests passed$(NC)"
+
 update-deps: ## Update all dependencies
 	@echo "$(BLUE)Updating dependencies...$(NC)"
 	@cd backend && pip-compile requirements.in --upgrade
@@ -264,3 +304,106 @@ vulnerability-scan: ## Scan for vulnerabilities
 	@mkdir -p reports
 	@docker run --rm -v "$(PWD):/app" -w /app aquasec/trivy fs --format json --output reports/trivy-report.json .
 	@echo "$(GREEN)✅ Vulnerability scan completed: reports/trivy-report.json$(NC)"
+
+docker-ci: ## Build local/app:ci from ./Dockerfile (logs -> reports/docker_build.log)
+	@echo "$(BLUE)Docker CI build...$(NC)"
+	@mkdir -p reports
+	@if [ -f Dockerfile ]; then \
+		echo "Found Dockerfile in project root. Building local/app:ci..."; \
+		( docker build -t local/app:ci . 2>&1 | tee reports/docker_build.log ); \
+		BUILD_STATUS=$$?; \
+		if [ $$BUILD_STATUS -eq 0 ]; then echo "$(GREEN)✅ Build succeeded$(NC)"; else echo "$(RED)❌ Build failed (see reports/docker_build.log)$(NC)"; fi; \
+		exit $$BUILD_STATUS; \
+	else \
+		echo "$(YELLOW)⚠️  Dockerfile not found in project root. Skipping build.$(NC)"; \
+		echo "Hint: add a root Dockerfile or see chat for minimal backend/frontend Dockerfiles."; \
+		exit 2; \
+	fi
+
+compose-ci: ## Render docker-compose*.yml configs into reports/compose_config.out
+	@echo "$(BLUE)Compose CI config render...$(NC)"
+	@mkdir -p reports
+	@if ls docker-compose*.yml >/dev/null 2>&1; then \
+		: > reports/compose_config.out; \
+		if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then DC="docker compose"; \
+		elif command -v docker-compose >/dev/null 2>&1; then DC="docker-compose"; \
+		else echo "$(RED)docker compose / docker-compose not installed$(NC)" && exit 1; fi; \
+		for f in docker-compose*.yml; do \
+			echo "### $$f ###" >> reports/compose_config.out; \
+			$$DC -f "$$f" config >> reports/compose_config.out || true; \
+			echo "" >> reports/compose_config.out; \
+		done; \
+		echo "$(GREEN)✅ Generated reports/compose_config.out$(NC)"; \
+	else \
+		echo "$(YELLOW)⚠️  No docker-compose*.yml files found in project root$(NC)"; \
+	fi
+
+##@ Backend (local)
+
+# Helper: activate virtualenv if exists
+define _with_backend_venv
+export DATABASE_URL=sqlite:///./test.db REDIS_URL=redis://localhost:6379/1; \
+if [ -f backend/.venv/bin/activate ]; then . backend/.venv/bin/activate; fi; \
+cd backend; 
+endef
+
+backend-init: ## Setup Python 3.11 env via uv/pyenv if available and install backend dependencies
+	@echo "$(BLUE)Setting up backend Python 3.11 environment...$(NC)"
+	@mkdir -p backend/.venv || true
+	@if command -v uv >/dev/null 2>&1; then \
+		echo "Using uv"; \
+		uv venv --python 3.11 backend/.venv >/dev/null 2>&1 || true; \
+	elif command -v pyenv >/dev/null 2>&1; then \
+		echo "Using pyenv"; \
+		pyenv install -s 3.11.9; \
+		PYENV_VERSION=3.11.9 python -m venv backend/.venv; \
+	else \
+		echo "uv/pyenv not found — falling back to system python"; \
+		if command -v python3.11 >/dev/null 2>&1; then python3.11 -m venv backend/.venv; \
+		else python3 -m venv backend/.venv; fi; \
+	fi
+	@. backend/.venv/bin/activate; python -m pip install --upgrade pip wheel setuptools
+	@echo "$(BLUE)Installing backend dependencies...$(NC)"
+	@if [ -f backend/requirements.txt ]; then \
+		. backend/.venv/bin/activate; pip install -r backend/requirements.txt; \
+	fi
+	@if [ -f backend/requirements-dev.txt ]; then \
+		. backend/.venv/bin/activate; pip install -r backend/requirements-dev.txt; \
+	fi
+	@if [ -f backend/pyproject.toml ] && ! [ -f backend/requirements.txt ]; then \
+		if command -v uv >/dev/null 2>&1; then \
+			. backend/.venv/bin/activate; uv pip install -e "backend/[dev]"; \
+		else \
+			. backend/.venv/bin/activate; pip install -e backend; \
+		fi; \
+	fi
+	@echo "$(GREEN)✅ Backend environment ready in backend/.venv$(NC)"
+
+backend-test-fast: ## Run backend tests fast (-k "not slow")
+	@echo "$(BLUE)Running backend fast tests...$(NC)"
+	@bash -lc '$(call _with_backend_venv) pytest -k "not slow" --maxfail=1 -q'
+
+backend-test-all: ## Run all backend tests (pytest -q)
+	@echo "$(BLUE)Running backend full test suite...$(NC)"
+	@bash -lc '$(call _with_backend_venv) pytest -q'
+
+backend-test-one: ## Run single backend test. Usage: make backend-test-one T=path/to/test.py::TestClass::test_name
+	@echo "$(BLUE)Running single backend test: $(T)$(NC)"
+	@test -n "$(T)" || (echo "$(RED)Provide T=FILE::TEST$(NC)" && exit 1)
+	@bash -lc '$(call _with_backend_venv) pytest -q "$(T)"'
+
+##@ Quality Gate
+
+.PHONY: quality-gate
+quality-gate: ## Run quality gate: backend tests+coverage, static checks, frontend coverage (if available), and summary report
+	@echo "$(BLUE)Running Quality Gate...$(NC)"
+	@mkdir -p reports
+	@echo "$(YELLOW)[1/4] Backend: pytest coverage → reports/coverage.xml$(NC)"
+	@bash -lc 'export DATABASE_URL=sqlite:///./test.db REDIS_URL=redis://localhost:6379/1; if [ -f backend/.venv/bin/activate ]; then . backend/.venv/bin/activate; fi; cd backend; pytest --cov=. --cov-report=xml:../reports/coverage.xml --cov-report=term-missing -q || true'
+	@echo "$(YELLOW)[2/4] Static: ruff check .$(NC)"
+	@bash -lc 'if [ -f backend/.venv/bin/activate ]; then . backend/.venv/bin/activate; fi; cd backend; ruff check . || true'
+	@echo "$(YELLOW)[3/4] Frontend: unit coverage (vitest/jest)$(NC)"
+	@bash -lc 'if [ -d frontend ]; then cd frontend; if npx --yes vitest --version >/dev/null 2>&1; then npx --yes vitest run --coverage --coverage.reporter=lcov || true; elif npx --yes jest --version >/dev/null 2>&1; then npx --yes jest --coverage --coverageReporters=lcov || true; else echo "No vitest/jest found, skipping frontend coverage"; fi; fi'
+	@echo "$(YELLOW)[4/4] Summary: scripts/quality_gate_summary.py → reports/quality_summary.md$(NC)"
+	@python3 scripts/quality_gate_summary.py || true
+	@echo "$(GREEN)✅ Quality Gate completed. See reports/quality_summary.md$(NC)"

@@ -72,3 +72,10 @@ server_backup/
 backend/htmlcov/
 backend/coverage.xml
 reports/
+
+# Local tooling
+.tools/
+backend/.venv/
+backend/.hypothesis/
+frontend/coverage/
+backend/.coverage
