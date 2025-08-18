@@ -32,3 +32,5 @@ CI readiness:
 Next steps:
 - Open PR and monitor required checks; close stale PRs superseded by this sync if any
 
+
+Finalization: local main equals origin/main; PR #44 merged; required checks green; sync branch deleted.
