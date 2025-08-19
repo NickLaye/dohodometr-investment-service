@@ -293,6 +293,17 @@ echo -e "${BLUE}   📊 Мониторинг: https://uptime.dohodometr.ru${NC}"
 echo -e "${BLUE}   🛠️  Traefik: https://traefik.dohodometr.ru${NC}"
 echo ""
 
+# Печатаем версию, задеплоенную на фронтенде (из version.json)
+echo -e "${BLUE}🔖 Деплой билда (live):${NC}"
+LIVE_COMMIT=$(curl -fsS https://dohodometr.ru/version.json | sed -n 's/.*"commit"\s*:\s*"\([^"]*\)".*/\1/p')
+LIVE_DATE=$(curl -fsS https://dohodometr.ru/version.json | sed -n 's/.*"date"\s*:\s*"\([^"]*\)".*/\1/p')
+LIVE_BRANCH=$(curl -fsS https://dohodometr.ru/version.json | sed -n 's/.*"branch"\s*:\s*"\([^"]*\)".*/\1/p')
+if [ -n "$LIVE_COMMIT" ]; then
+  echo -e "${GREEN}✅ Live version: commit=$LIVE_COMMIT date=$LIVE_DATE branch=$LIVE_BRANCH${NC}"
+else
+  echo -e "${YELLOW}⚠️  Не удалось прочитать /version.json. Возможно, фронтенд ещё не прогрелся или версия не сгенерирована.${NC}"
+fi
+
 echo -e "${YELLOW}🔐 ПАРОЛИ СОХРАНЕНЫ В:${NC}"
 echo -e "${YELLOW}   /opt/dohodometr_passwords.txt${NC}"
 echo -e "${YELLOW}   ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ ИХ В БЕЗОПАСНОЕ МЕСТО!${NC}"
