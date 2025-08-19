@@ -1,0 +1,60 @@
+version: "3.9"
+services:
+  admin_backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      GH_TOKEN: ${GH_TOKEN:-}
+      REPO: ${REPO:-NickLaye/dohodometr-core}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN}
+      RUN_SCHEDULER: ${RUN_SCHEDULER:-true}
+      CORS_ORIGINS: '["https://admin.dohodometr.ru"]'
+      DB_SCHEMA: admin
+    depends_on:
+      - db
+    expose:
+      - "8000"
+    networks:
+      - web
+      - internal
+
+  admin_frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: https://api.dohodometr.ru
+    expose:
+      - "3000"
+    networks:
+      - web
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: dohodometr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - admin_backend
+      - admin_frontend
+    volumes:
+      - ./deploy/nginx/admin.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    networks:
+      - web
+
+networks:
+  web:
+  internal:
+
+volumes:
+  db_data:
+
+
