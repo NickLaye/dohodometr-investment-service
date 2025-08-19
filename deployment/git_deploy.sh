@@ -117,6 +117,10 @@ echo -e "${GREEN}✅ Код получен из GitHub${NC}"
 # Переходим в директорию деплоя
 cd "$DEPLOY_DIR/deployment"
 
+# Печатаем версию билда в лог
+echo -e "${BLUE}🔖 Build meta:${NC}"
+echo "Deploying $(git -C "$DEPLOY_DIR" rev-parse --short HEAD) at $(date -u +"%Y-%m-%dT%H:%M:%SZ") from branch $(git -C \"$DEPLOY_DIR\" rev-parse --abbrev-ref HEAD)"
+
 # Создание .env файла если его нет
 if [ ! -f ".env" ]; then
     echo -e "${YELLOW}📝 Создаем .env файл...${NC}"
